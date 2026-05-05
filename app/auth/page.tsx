@@ -2,6 +2,7 @@
 'use client'
 
 import { Eye, EyeOff, LockKeyhole, User2, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Other } from '@/app/auth/other'
 import { ThemeToggle } from '@/components/features/theme-toggle'
@@ -35,6 +36,7 @@ function Login({ onSwitch, onUsernameChange }: { onSwitch: () => void; onUsernam
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const router = useRouter()
   const canSubmit = username.trim().length > 0 && password.length > 0
 
   return (
@@ -47,7 +49,20 @@ function Login({ onSwitch, onUsernameChange }: { onSwitch: () => void; onUsernam
           </Button>
         </CardAction>
       </CardHeader>
-      <form className="space-y-8">
+      <form
+        className="space-y-8"
+        onSubmit={(event) => {
+          event.preventDefault()
+          window.localStorage.setItem(
+            'user',
+            JSON.stringify({
+              id: crypto.randomUUID(),
+              username: username.trim(),
+            }),
+          )
+          router.push('/main')
+        }}
+      >
         <CardContent>
           <FieldSet>
             <FieldGroup>

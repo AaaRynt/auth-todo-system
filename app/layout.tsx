@@ -2,6 +2,7 @@
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 import type { Metadata } from 'next'
+import { AuthGuard } from '@/components/auth-guard'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { cn } from '@/lib/utils'
@@ -20,8 +21,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className={cn('flex', 'min-h-full', GeistSans.className, GeistSans.variable, GeistMono.variable)}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
+        <ThemeProvider defaultTheme="system">
+          <AuthGuard>{children}</AuthGuard>
           <Toaster />
         </ThemeProvider>
       </body>

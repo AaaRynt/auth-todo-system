@@ -30,12 +30,18 @@ export function Other({ username }: { username: string }) {
 }
 
 function Time({ username }: { username: string }) {
-  const [now, setNow] = useState<Date>(() => new Date())
+  const [now, setNow] = useState<Date | null>(null)
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setNow(new Date())
+    })
     const timer = window.setInterval(() => {
       setNow(new Date())
     }, 1000)
-    return () => window.clearInterval(timer)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearInterval(timer)
+    }
   }, [])
 
   const formatDate = (date: Date) => {
@@ -58,9 +64,9 @@ function Time({ username }: { username: string }) {
     if (hour < 24) return 'Good evening'
   }
 
-  const date = formatDate(now)
-  const clock = formatTime(now)
-  const greeting = getGreeting(now)
+  const date = now ? formatDate(now) : '---- -- --'.replaceAll(' ', '-')
+  const clock = now ? formatTime(now) : '--:--:--'
+  const greeting = now ? getGreeting(now) : 'Welcome back'
   const displayName = username.trim()
   const [hours, minutes, seconds] = clock.split(':')
   const colon = `transition-opacity ${now && now.getSeconds() % 2 === 1 ? 'opacity-20' : 'opacity-100'}`
