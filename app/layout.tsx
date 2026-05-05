@@ -22,8 +22,8 @@ export default function RootLayout({
       <body className={cn('flex', 'min-h-full', GeistSans.className, GeistSans.variable, GeistMono.variable)}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
+          <Toaster />
         </ThemeProvider>
-        <Toaster />
       </body>
     </html>
   )
