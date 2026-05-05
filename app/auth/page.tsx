@@ -1,8 +1,10 @@
+// app/auth/page.tsx
 'use client'
 
-import { Clock, Eye, EyeOff, LockKeyhole, ShieldCheck, User2, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { Badge } from '@/components/ui/badge'
+import { Eye, EyeOff, LockKeyhole, User2, X } from 'lucide-react'
+import { useState } from 'react'
+import { Other } from '@/app/auth/other'
+import { ThemeToggle } from '@/components/features/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -12,107 +14,28 @@ import { Input } from '@/components/ui/input'
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true)
+  const [activeUsername, setActiveUsername] = useState('')
 
   return (
-    <main className="bg-background text-foreground flex min-h-dvh flex-1 flex-row items-center justify-evenly px-8">
-      <section className="flex flex-col gap-8">
-        <div className="space-y-4">
-          <Time />
-          <p className="text-muted-foreground max-w-lg text-base leading-7">
-            Sign in to continue managing your <strong>todos</strong>, account security, and daily workflow. Your session
-            is protected with secure credentials.
-          </p>
-        </div>
-
-        <div className="grid max-w-xl grid-cols-2 gap-4">
-          <Introduce
-            Icon={LockKeyhole}
-            title="Private session"
-            p="Stay signed in on trusted devices for faster access."
-          />
-          <Introduce Icon={ShieldCheck} title="Secure access" p="Use protected credentials to enter your workspace." />
-        </div>
-      </section>
-      {isLogin ? <Login onSwitch={() => setIsLogin(false)} /> : <Signup onSwitch={() => setIsLogin(true)} />}
+    <main className="bg-background text-foreground flex min-h-dvh flex-1 flex-col items-center justify-center gap-8 sm:flex-row sm:justify-evenly sm:px-8">
+      <div className="absolute top-1/100 right-1/100">
+        <ThemeToggle />
+      </div>
+      <Other username={activeUsername} />
+      {isLogin ? (
+        <Login onSwitch={() => setIsLogin(false)} onUsernameChange={setActiveUsername} />
+      ) : (
+        <Signup onSwitch={() => setIsLogin(true)} onUsernameChange={setActiveUsername} />
+      )}
     </main>
   )
 }
 
-function Time() {
-  const [now, setNow] = useState<Date>(() => new Date())
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNow(new Date())
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [])
-
-  const formatDate = (date: Date) => {
-    const YYYY = date.getFullYear()
-    const MM = String(date.getMonth() + 1).padStart(2, '0')
-    const DD = String(date.getDate()).padStart(2, '0')
-    return `${YYYY}-${MM}-${DD}`
-  }
-  const formatTime = (date: Date) => {
-    const HH = String(date.getHours()).padStart(2, '0')
-    const MM = String(date.getMinutes()).padStart(2, '0')
-    const SS = String(date.getSeconds()).padStart(2, '0')
-    return `${HH}:${MM}:${SS}`
-  }
-  const getGreeting = (date: Date) => {
-    const hour = date.getHours()
-    if (hour < 6) return 'It is too late...'
-    if (hour < 12) return 'Good morning'
-    if (hour < 18) return 'Good afternoon'
-    if (hour < 24) return 'Good evening!'
-  }
-
-  const date = formatDate(now)
-  const clock = formatTime(now)
-  const greeting = getGreeting(now)
-  const [hours, minutes, seconds] = clock.split(':')
-  const colon = `transition-opacity ${now && now.getSeconds() % 2 === 1 ? 'opacity-10' : 'opacity-100'}`
-  return (
-    <>
-      <Badge className="bg-muted/40 text-muted-foreground inline-flex items-center gap-2 rounded-lg border px-6 py-4 text-sm">
-        <Clock aria-hidden="true" />
-        <time dateTime={`${date}T${clock}`} className="font-mono tabular-nums">
-          <span>{date}</span>
-          <span className="px-2 opacity-50">/</span>
-          <span>{hours}</span>
-          <span className={colon}>:</span>
-          <span>{minutes}</span>
-          <span className={colon}>:</span>
-          <span>{seconds}</span>
-        </time>
-      </Badge>
-      <h1 className="text-5xl font-bold">{greeting}</h1>
-    </>
-  )
-}
-
-function Introduce({
-  Icon,
-  title,
-  p,
-}: {
-  Icon: React.ComponentType<{ className?: string }>
-  title: string
-  p: string
-}) {
-  return (
-    <Card>
-      <CardHeader className="flex items-center gap-2 text-xl">
-        <Icon className="text-primary size-6" aria-hidden="true" />
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="text-muted-foreground">{p}</CardContent>
-    </Card>
-  )
-}
-
-function Login({ onSwitch }: { onSwitch: () => void }) {
+function Login({ onSwitch, onUsernameChange }: { onSwitch: () => void; onUsernameChange: (username: string) => void }) {
   const [showPassword, setShowPassword] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const canSubmit = username.trim().length > 0 && password.length > 0
 
   return (
     <Card className="w-md shadow-xl">
@@ -124,7 +47,7 @@ function Login({ onSwitch }: { onSwitch: () => void }) {
           </Button>
         </CardAction>
       </CardHeader>
-      <form className="space-y-6">
+      <form className="space-y-8">
         <CardContent>
           <FieldSet>
             <FieldGroup>
@@ -135,7 +58,19 @@ function Login({ onSwitch }: { onSwitch: () => void }) {
                     className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
                     aria-hidden="true"
                   />
-                  <Input id="username" name="username" type="text" autoComplete="username" className="pl-12" required />
+                  <Input
+                    id="username"
+                    name="username"
+                    type="text"
+                    autoComplete="username"
+                    className="pl-12"
+                    value={username}
+                    onChange={(event) => {
+                      setUsername(event.target.value)
+                      onUsernameChange(event.target.value)
+                    }}
+                    required
+                  />
                 </div>
               </Field>
 
@@ -157,6 +92,8 @@ function Login({ onSwitch }: { onSwitch: () => void }) {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     className="pr-12 pl-12"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
                     required
                   />
                   <Button
@@ -181,7 +118,7 @@ function Login({ onSwitch }: { onSwitch: () => void }) {
         </CardContent>
         <CardFooter>
           <FieldGroup>
-            <Button type="submit" size="lg" className="w-full rounded-full">
+            <Button type="submit" size="lg" className="w-full rounded-full" disabled={!canSubmit}>
               Login
             </Button>
             <FieldSeparator>or</FieldSeparator>
@@ -195,8 +132,20 @@ function Login({ onSwitch }: { onSwitch: () => void }) {
   )
 }
 
-function Signup({ onSwitch }: { onSwitch: () => void }) {
+function Signup({
+  onSwitch,
+  onUsernameChange,
+}: {
+  onSwitch: () => void
+  onUsernameChange: (username: string) => void
+}) {
   const [showPassword, setShowPassword] = useState(false)
+  const [accept, setAccept] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const canSubmit =
+    username.trim().length > 0 && password.length > 0 && confirm.length > 0 && password === confirm && accept
 
   return (
     <Card className="w-md shadow-xl">
@@ -208,7 +157,7 @@ function Signup({ onSwitch }: { onSwitch: () => void }) {
           </Button>
         </CardAction>
       </CardHeader>
-      <form className="space-y-6">
+      <form className="space-y-8">
         <CardContent>
           <FieldSet>
             <FieldGroup>
@@ -219,7 +168,19 @@ function Signup({ onSwitch }: { onSwitch: () => void }) {
                     className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
                     aria-hidden="true"
                   />
-                  <Input id="username" name="username" type="text" autoComplete="username" className="pl-12" required />
+                  <Input
+                    id="username"
+                    name="username"
+                    type="text"
+                    autoComplete="username"
+                    className="pl-12"
+                    value={username}
+                    onChange={(event) => {
+                      setUsername(event.target.value)
+                      onUsernameChange(event.target.value)
+                    }}
+                    required
+                  />
                 </div>
               </Field>
               <Field>
@@ -236,6 +197,8 @@ function Signup({ onSwitch }: { onSwitch: () => void }) {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     className="pr-12 pl-12"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
                     required
                   />
                   <Button
@@ -268,6 +231,9 @@ function Signup({ onSwitch }: { onSwitch: () => void }) {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                     className="pr-12 pl-12"
+                    value={confirm}
+                    onChange={(event) => setConfirm(event.target.value)}
+                    aria-invalid={password.length > 0 && confirm.length > 0 && password !== confirm}
                     required
                   />
                   <Button
@@ -293,7 +259,12 @@ function Signup({ onSwitch }: { onSwitch: () => void }) {
         <CardFooter className="flex flex-col gap-2">
           <FieldLabel>
             <Field orientation="horizontal">
-              <Checkbox id="toggle-checkbox-2" name="toggle-checkbox-2" />
+              <Checkbox
+                id="toggle-checkbox-2"
+                name="toggle-checkbox-2"
+                checked={accept}
+                onCheckedChange={(checked) => setAccept(checked === true)}
+              />
               <FieldContent className="flex-row items-center">
                 Accept&nbsp;
                 <HoverCard openDelay={10} closeDelay={100}>
@@ -322,7 +293,7 @@ function Signup({ onSwitch }: { onSwitch: () => void }) {
             </Field>
           </FieldLabel>
           <Field>
-            <Button type="submit" size="lg" className="w-full rounded-full">
+            <Button type="submit" size="lg" className="w-full rounded-full" disabled={!canSubmit}>
               Sign up
             </Button>
           </Field>

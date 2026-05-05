@@ -3,6 +3,6 @@ export type todo = {
   title: string
   id: Date
   user: string
-  done: boolean
+  type: 'todo' | 'doing' | 'done'
   importance: number
 }
