@@ -1,14 +1,18 @@
 'use client'
 
-import { Clock, Eye, EyeOff, LockKeyhole, ShieldCheck, User2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Clock, Eye, EyeOff, LockKeyhole, ShieldCheck, User2, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Field, FieldGroup, FieldLabel, FieldSeparator, FieldSet } from '@/components/ui/field'
+import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Field, FieldContent, FieldGroup, FieldLabel, FieldSeparator, FieldSet } from '@/components/ui/field'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { Input } from '@/components/ui/input'
 
 export default function Auth() {
+  const [isLogin, setIsLogin] = useState(true)
+
   return (
     <main className="bg-background text-foreground flex min-h-dvh flex-1 flex-row items-center justify-evenly px-8">
       <section className="flex flex-col gap-8">
@@ -29,40 +33,32 @@ export default function Auth() {
           <Introduce Icon={ShieldCheck} title="Secure access" p="Use protected credentials to enter your workspace." />
         </div>
       </section>
-      <Login />
+      {isLogin ? <Login onSwitch={() => setIsLogin(false)} /> : <Signup onSwitch={() => setIsLogin(true)} />}
     </main>
   )
 }
 
 function Time() {
   const [now, setNow] = useState<Date>(() => new Date())
-
   useEffect(() => {
     const timer = window.setInterval(() => {
       setNow(new Date())
     }, 1000)
-
     return () => window.clearInterval(timer)
   }, [])
-  const formatDate = (date: Date) =>
-    new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(date)
-  const formatTime = (date: Date) =>
-    new Intl.DateTimeFormat('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    }).format(date)
 
-  const getTimeParts = (time: string) => {
-    const [hours = '--', minutes = '--', seconds = '--'] = time.split(':')
-    return { hours, minutes, seconds }
+  const formatDate = (date: Date) => {
+    const YYYY = date.getFullYear()
+    const MM = String(date.getMonth() + 1).padStart(2, '0')
+    const DD = String(date.getDate()).padStart(2, '0')
+    return `${YYYY}-${MM}-${DD}`
   }
-
+  const formatTime = (date: Date) => {
+    const HH = String(date.getHours()).padStart(2, '0')
+    const MM = String(date.getMinutes()).padStart(2, '0')
+    const SS = String(date.getSeconds()).padStart(2, '0')
+    return `${HH}:${MM}:${SS}`
+  }
   const getGreeting = (date: Date) => {
     const hour = date.getHours()
     if (hour < 6) return 'It is too late...'
@@ -71,23 +67,23 @@ function Time() {
     if (hour < 24) return 'Good evening!'
   }
 
-  const greeting = useMemo(() => (now ? getGreeting(now) : 'Welcome back'), [now])
-  const date = useMemo(() => formatDate(now), [now])
-  const clock = useMemo(() => (now ? formatTime(now) : '--:--:--'), [now])
-  const timeParts = useMemo(() => getTimeParts(clock), [clock])
+  const date = formatDate(now)
+  const clock = formatTime(now)
+  const greeting = getGreeting(now)
+  const [hours, minutes, seconds] = clock.split(':')
   const colon = `transition-opacity ${now && now.getSeconds() % 2 === 1 ? 'opacity-10' : 'opacity-100'}`
   return (
     <>
       <Badge className="bg-muted/40 text-muted-foreground inline-flex items-center gap-2 rounded-lg border px-6 py-4 text-sm">
         <Clock aria-hidden="true" />
-        <time dateTime={`${date} ${clock}`} className="font-mono tabular-nums">
+        <time dateTime={`${date}T${clock}`} className="font-mono tabular-nums">
           <span>{date}</span>
           <span className="px-2 opacity-50">/</span>
-          <span>{timeParts.hours}</span>
+          <span>{hours}</span>
           <span className={colon}>:</span>
-          <span>{timeParts.minutes}</span>
+          <span>{minutes}</span>
           <span className={colon}>:</span>
-          <span>{timeParts.seconds}</span>
+          <span>{seconds}</span>
         </time>
       </Badge>
       <h1 className="text-5xl font-bold">{greeting}</h1>
@@ -115,16 +111,21 @@ function Introduce({
   )
 }
 
-function Login() {
+function Login({ onSwitch }: { onSwitch: () => void }) {
   const [showPassword, setShowPassword] = useState(false)
 
   return (
     <Card className="w-md shadow-xl">
       <CardHeader className="gap-2">
         <CardTitle className="text-xl">Login</CardTitle>
+        <CardAction>
+          <Button variant="ghost" size="icon" className="hover:text-destructive">
+            <X />
+          </Button>
+        </CardAction>
       </CardHeader>
-      <CardContent>
-        <form className="space-y-6">
+      <form className="space-y-6">
+        <CardContent>
           <FieldSet>
             <FieldGroup>
               <Field>
@@ -134,14 +135,7 @@ function Login() {
                     className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
                     aria-hidden="true"
                   />
-                  <Input
-                    id="username"
-                    name="username"
-                    type="username"
-                    autoComplete="username"
-                    className="pl-12"
-                    required
-                  />
+                  <Input id="username" name="username" type="text" autoComplete="username" className="pl-12" required />
                 </div>
               </Field>
 
@@ -184,18 +178,156 @@ function Login() {
               </Field>
             </FieldGroup>
           </FieldSet>
-
+        </CardContent>
+        <CardFooter>
           <FieldGroup>
             <Button type="submit" size="lg" className="w-full rounded-full">
               Login
             </Button>
             <FieldSeparator>or</FieldSeparator>
-            <Button type="button" variant="outline" size="lg" className="w-full rounded-full">
+            <Button type="button" variant="outline" size="lg" className="w-full rounded-full" onClick={onSwitch}>
               Sign up
             </Button>
           </FieldGroup>
-        </form>
-      </CardContent>
+        </CardFooter>
+      </form>
+    </Card>
+  )
+}
+
+function Signup({ onSwitch }: { onSwitch: () => void }) {
+  const [showPassword, setShowPassword] = useState(false)
+
+  return (
+    <Card className="w-md shadow-xl">
+      <CardHeader className="gap-2">
+        <CardTitle className="text-xl">Sign up</CardTitle>
+        <CardAction>
+          <Button type="button" variant="link" onClick={onSwitch}>
+            Login
+          </Button>
+        </CardAction>
+      </CardHeader>
+      <form className="space-y-6">
+        <CardContent>
+          <FieldSet>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="username">Username</FieldLabel>
+                <div className="relative">
+                  <User2
+                    className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
+                    aria-hidden="true"
+                  />
+                  <Input id="username" name="username" type="text" autoComplete="username" className="pl-12" required />
+                </div>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <div className="relative">
+                  <LockKeyhole
+                    className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
+                    aria-hidden="true"
+                  />
+
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    className="pr-12 pl-12"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    size="icon-xs"
+                    variant="ghost"
+                    className="text-muted-foreground absolute top-1/2 right-4 -translate-y-1/2!"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((visible) => !visible)}
+                  >
+                    {showPassword ? (
+                      <EyeOff aria-hidden="true" className="size-4" />
+                    ) : (
+                      <Eye aria-hidden="true" className="size-4" />
+                    )}
+                  </Button>
+                </div>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+                <div className="relative">
+                  <LockKeyhole
+                    className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    id="confirm-password"
+                    name="confirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    className="pr-12 pl-12"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    size="icon-xs"
+                    variant="ghost"
+                    className="text-muted-foreground absolute top-1/2 right-4 -translate-y-1/2!"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((visible) => !visible)}
+                  >
+                    {showPassword ? (
+                      <EyeOff aria-hidden="true" className="size-4" />
+                    ) : (
+                      <Eye aria-hidden="true" className="size-4" />
+                    )}
+                  </Button>
+                </div>
+              </Field>
+            </FieldGroup>
+          </FieldSet>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-2">
+          <FieldLabel>
+            <Field orientation="horizontal">
+              <Checkbox id="toggle-checkbox-2" name="toggle-checkbox-2" />
+              <FieldContent className="flex-row items-center">
+                Accept&nbsp;
+                <HoverCard openDelay={10} closeDelay={100}>
+                  <HoverCardTrigger asChild>
+                    <Button type="button" variant="link" className="h-auto p-0">
+                      terms and conditions
+                    </Button>
+                  </HoverCardTrigger>
+                  <HoverCardContent side="top" className="flex flex-col gap-1 px-4 py-2">
+                    <CardHeader>
+                      <CardTitle>Terms & Conditions</CardTitle>
+                      <CardDescription className="text-xs">
+                        You agree to our usage policies and data handling practices.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ul className="list-disc pl-4">
+                        <li>Your data is securely stored</li>
+                        <li>No unauthorized sharing</li>
+                        <li>You can opt out anytime</li>
+                      </ul>
+                    </CardContent>
+                  </HoverCardContent>
+                </HoverCard>
+              </FieldContent>
+            </Field>
+          </FieldLabel>
+          <Field>
+            <Button type="submit" size="lg" className="w-full rounded-full">
+              Sign up
+            </Button>
+          </Field>
+        </CardFooter>
+      </form>
     </Card>
   )
 }
