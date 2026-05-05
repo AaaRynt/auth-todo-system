@@ -3,18 +3,16 @@
 import { ChartBar, ListTodo, Settings, UserCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { Group } from '@/components/features/group'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const welcomed = useRef(false)
-
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      if (welcomed.current) return
+      if (window.sessionStorage.getItem('main-welcome-shown') === 'true') return
 
       const user = JSON.parse(window.localStorage.getItem('user') || 'null') as {
         id: string
@@ -23,7 +21,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       if (!user?.username) return
 
-      welcomed.current = true
+      window.sessionStorage.setItem('main-welcome-shown', 'true')
       toast.info(`welcome,${user.username}`, { position: 'top-center' })
     })
 
@@ -31,11 +29,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }, [])
 
   return (
-    <div className="bg-background text-foreground flex min-h-dvh flex-1 flex-col">
+    <div className="bg-background text-foreground relative flex min-h-dvh flex-1 flex-col">
       <Header />
       <main className="flex w-full flex-1">
         <Aside />
-        <section className="flex flex-1 p-6">{children}</section>
+        <section className="relative flex flex-1 p-6">{children}</section>
       </main>
     </div>
   )
