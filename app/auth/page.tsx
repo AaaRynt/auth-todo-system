@@ -5,7 +5,7 @@ import { Eye, EyeOff, LockKeyhole, User2, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Other } from '@/app/auth/other'
-import { ThemeToggle } from '@/components/features/theme-toggle'
+import { Group } from '@/components/features/group'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -20,7 +20,7 @@ export default function Auth() {
   return (
     <main className="bg-background text-foreground flex min-h-dvh flex-1 flex-col items-center justify-center gap-8 sm:flex-row sm:justify-evenly sm:px-8">
       <div className="absolute top-1/100 right-1/100">
-        <ThemeToggle />
+        <Group />
       </div>
       <Other username={activeUsername} />
       {isLogin ? (
@@ -285,7 +285,7 @@ function Signup({
                 <HoverCard openDelay={10} closeDelay={100}>
                   <HoverCardTrigger asChild>
                     <Button type="button" variant="link" className="h-auto p-0">
-                      terms and conditions
+                      terms & conditions
                     </Button>
                   </HoverCardTrigger>
                   <HoverCardContent side="top" className="flex flex-col gap-1 px-4 py-2">

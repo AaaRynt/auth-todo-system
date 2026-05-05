@@ -5,4 +5,5 @@ export type todo = {
   user: string
   type: 'todo' | 'doing' | 'done'
   importance: number
+  group: string
 }
