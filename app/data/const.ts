@@ -1,13 +1,13 @@
 // app/data/const.tsx
-import type { Filter, Priority } from '@/app/data/type'
+import type { Tfilter, Tpriority } from './type'
 
-export const filters: Array<{ value: Filter; label: string }> = [
+export const filters: Array<{ value: Tfilter; label: string }> = [
   { value: 'all', label: 'All' },
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' },
 ]
 
-export const priorityOptions: Array<{ value: Priority; label: string; className: string }> = [
+export const priorityOptions: Array<{ value: Tpriority; label: string; className: string }> = [
   {
     value: 'low',
     label: 'Low',
@@ -17,4 +17,4 @@ export const priorityOptions: Array<{ value: Priority; label: string; className:
   { value: 'high', label: 'High', className: 'border-yellow-500/30 text-yellow-700 dark:text-yellow-300' },
   { value: 'urgent', label: 'Urgent', className: 'border-red-500/30  text-red-700 dark:text-red-300' },
 ]
-export const defaultPriority: Priority = 'normal'
+export const defaultPriority: Tpriority = 'normal'

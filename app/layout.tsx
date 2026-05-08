@@ -4,7 +4,7 @@ import { GeistSans } from 'geist/font/sans'
 import type { Metadata } from 'next'
 import { AuthGuard } from '@/components/auth-guard'
 import { ThemeProvider } from '@/components/theme-provider'
-import { Toaster } from '@/components/ui/sonner'
+import { Toaster } from '@/components/ui/'
 import { cn } from '@/lib/utils'
 import './globals.css'
 

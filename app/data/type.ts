@@ -1,11 +1,11 @@
 // app/data/type.ts
-export type Todo = {
+export type Ttodo = {
   id: string
   title: string
   group: string
-  priority: Priority
+  priority: Tpriority
   completed: boolean
   createdAt: number
 }
-export type Filter = 'all' | 'active' | 'completed'
-export type Priority = 'low' | 'normal' | 'high' | 'urgent'
+export type Tfilter = 'all' | 'active' | 'completed'
+export type Tpriority = 'low' | 'normal' | 'high' | 'urgent'

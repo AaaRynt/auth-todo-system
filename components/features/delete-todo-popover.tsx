@@ -3,20 +3,20 @@
 
 import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { Todo } from '@/app/data/type'
-import { Button } from '@/components/ui/button'
+import type { Ttodo } from '@/app/data/type'
 import {
+  Button,
   Popover,
   PopoverContent,
   PopoverDescription,
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '@/components/ui/popover'
+} from '@/components/ui/'
 
 const trashSoundSrc = '/audio/drag%20to%20trash.mp3'
 
-export function DeleteTodoPopover({ todo, onDelete }: { todo: Todo; onDelete: (id: string) => void }) {
+export function DeleteTodoPopover({ todo, onDelete }: { todo: Ttodo; onDelete: (id: string) => void }) {
   const [open, setOpen] = useState(false)
 
   const playTrashSound = () => {

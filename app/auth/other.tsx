@@ -3,8 +3,7 @@
 
 import { Clock, LockKeyhole, ShieldCheck } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge, Card, CardContent, CardHeader, CardTitle } from '@/components/ui/'
 
 export function Other({ username }: { username: string }) {
   return (

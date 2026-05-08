@@ -4,14 +4,29 @@
 import { Eye, EyeOff, LockKeyhole, User2, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Other } from '@/app/auth/other'
-import { Group } from '@/components/features/group'
-import { Button } from '@/components/ui/button'
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Field, FieldContent, FieldGroup, FieldLabel, FieldSeparator, FieldSet } from '@/components/ui/field'
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
-import { Input } from '@/components/ui/input'
+import { Group } from '@/components/features/'
+import {
+  Button,
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  Checkbox,
+  Field,
+  FieldContent,
+  FieldGroup,
+  FieldLabel,
+  FieldSeparator,
+  FieldSet,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+  Input,
+} from '@/components/ui/'
+import { Other } from './other'
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true)

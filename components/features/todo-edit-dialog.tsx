@@ -4,11 +4,9 @@
 import { PencilLine } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Priority, Todo } from '@/app/data/type'
-import { PrioritySelect } from '@/components/features/priority-select'
-import { SearchableSelect } from '@/components/features/searchable-select'
-import { Button } from '@/components/ui/button'
+import type { Tpriority, Ttodo } from '@/app/data/type'
 import {
+  Button,
   Dialog,
   DialogClose,
   DialogContent,
@@ -17,22 +15,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+  Input,
+} from '@/components/ui/'
+import { PrioritySelect, SearchableSelect } from './'
 
 export function TodoEditDialog({
   todo,
   groups,
   onUpdate,
 }: {
-  todo: Todo
+  todo: Ttodo
   groups: string[]
-  onUpdate: (id: string, updates: Partial<Pick<Todo, 'title' | 'group' | 'priority'>>) => void
+  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => void
 }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(todo.title)
   const [group, setGroup] = useState(todo.group)
-  const [priority, setPriority] = useState<Priority>(todo.priority)
+  const [priority, setPriority] = useState<Tpriority>(todo.priority)
   const groupOptions = useMemo(
     () =>
       groups.map((groupName) => ({

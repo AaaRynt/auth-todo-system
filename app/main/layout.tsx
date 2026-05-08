@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
-import { Group } from '@/components/features/group'
-import { buttonVariants } from '@/components/ui/button'
+import { Group } from '@/components/features/'
+import { buttonVariants } from '@/components/ui/'
 import { cn } from '@/lib/utils'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {

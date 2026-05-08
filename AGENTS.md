@@ -1,5 +1,10 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+**Never use any build sentence after output!**
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+- 文件/文件夹 —— 全部小写，多个单词用 kebab-case
+- 接口命名 —— xxxApi
+- 类型定义 —— 以大写 I 或 T 开头
+- 组件命名 —— 以大写字母开头，驼峰命名
+- api目录子文件夹需与app目录子文件夹对应
+- agent和用户封装的组件默认在`/components/features/`
+- 组件需要在`index.ts`使用Barrel File聚合导出
+- 文件的开头要有绝对目录的注释

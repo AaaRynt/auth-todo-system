@@ -6,26 +6,33 @@ import type * as React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { defaultPriority, filters, priorityOptions } from '@/app/data/const'
-import type { Filter, Priority, Todo } from '@/app/data/type'
-import { DeleteTodoPopover } from '@/components/features/delete-todo-popover'
-import { PrioritySelect } from '@/components/features/priority-select'
-import { SearchableSelect } from '@/components/features/searchable-select'
-import { TodoEditDialog } from '@/components/features/todo-edit-dialog'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '@/components/ui/item'
+import type { Tfilter, Tpriority, Ttodo } from '@/app/data/type'
+import { DeleteTodoPopover, PrioritySelect, SearchableSelect, TodoEditDialog } from '@/components/features/'
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Checkbox,
+  Input,
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from '@/components/ui/'
 import { cn } from '@/lib/utils'
 
 const defaultGroup = 'Inbox'
 
-function normalizePriority(priority: Todo['priority'] | undefined): Priority {
+function normalizePriority(priority: Ttodo['priority'] | undefined): Tpriority {
   return priorityOptions.find((option) => option.value === priority)?.value ?? defaultPriority
 }
 
-function normalizeTodo(todo: Partial<Todo>): Todo {
+function normalizeTodo(todo: Partial<Ttodo>): Ttodo {
   return {
     id: todo.id ?? crypto.randomUUID(),
     title: todo.title ?? 'Untitled task',
@@ -47,16 +54,16 @@ function formatCreatedAt(timestamp: number) {
 }
 
 export default function TodoPage() {
-  const [todos, setTodos] = useState<Todo[]>([])
+  const [todos, setTodos] = useState<Ttodo[]>([])
   const [title, setTitle] = useState('')
   const [group, setGroup] = useState(defaultGroup)
-  const [priority, setPriority] = useState<Priority>(defaultPriority)
-  const [filter, setFilter] = useState<Filter>('all')
+  const [priority, setPriority] = useState<Tpriority>(defaultPriority)
+  const [filter, setFilter] = useState<Tfilter>('all')
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      const storedTodos = JSON.parse(window.localStorage.getItem('todos') || '[]') as Partial<Todo>[]
+      const storedTodos = JSON.parse(window.localStorage.getItem('todos') || '[]') as Partial<Ttodo>[]
 
       setTodos(Array.isArray(storedTodos) ? storedTodos.map(normalizeTodo) : [])
       setHydrated(true)
@@ -93,7 +100,7 @@ export default function TodoPage() {
 
     return true
   })
-  const groupedTodos = visibleTodos.reduce<Record<string, Todo[]>>((result, todo) => {
+  const groupedTodos = visibleTodos.reduce<Record<string, Ttodo[]>>((result, todo) => {
     const key = todo.group || defaultGroup
 
     result[key] = result[key] ?? []
@@ -128,7 +135,7 @@ export default function TodoPage() {
     setTodos((currentTodos) => currentTodos.map((todo) => (todo.id === id ? { ...todo, completed } : todo)))
   }
 
-  const updateTodo = (id: string, updates: Partial<Pick<Todo, 'title' | 'group' | 'priority'>>) => {
+  const updateTodo = (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => {
     setTodos((currentTodos) =>
       currentTodos.map((todo) =>
         todo.id === id && !todo.completed
@@ -272,10 +279,10 @@ function TodoItem({
   onUpdate,
   onDelete,
 }: {
-  todo: Todo
+  todo: Ttodo
   groups: string[]
   onToggle: (id: string, completed: boolean) => void
-  onUpdate: (id: string, updates: Partial<Pick<Todo, 'title' | 'group' | 'priority'>>) => void
+  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => void
   onDelete: (id: string) => void
 }) {
   const priority = priorityOptions.find((option) => option.value === todo.priority) ?? priorityOptions[1]
@@ -319,7 +326,7 @@ function TodoItem({
   )
 }
 
-function EmptyState({ filter }: { filter: Filter }) {
+function EmptyState({ filter }: { filter: Tfilter }) {
   const message =
     filter === 'completed'
       ? 'No completed tasks yet.'
