@@ -1,67 +1,25 @@
 // app/main/todo/page.tsx
 'use client'
 
-import { CalendarClock, CirclePlus, Flag, Folder, ListTodo, PencilLine, Trash2 } from 'lucide-react'
+import { CalendarClock, CirclePlus, Flag, Folder, ListTodo } from 'lucide-react'
 import type * as React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { defaultPriority, filters, priorityOptions } from '@/app/data/const'
+import type { Filter, Priority, Todo } from '@/app/data/type'
+import { DeleteTodoPopover } from '@/components/features/delete-todo-popover'
+import { PrioritySelect } from '@/components/features/priority-select'
+import { SearchableSelect } from '@/components/features/searchable-select'
+import { TodoEditDialog } from '@/components/features/todo-edit-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item'
-import {
-  Popover,
-  PopoverContent,
-  PopoverDescription,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '@/components/ui/item'
 import { cn } from '@/lib/utils'
 
-type Todo = {
-  id: string
-  title: string
-  group: string
-  priority: Priority
-  completed: boolean
-  createdAt: number
-}
-
-type Filter = 'all' | 'active' | 'completed'
-type Priority = 'low' | 'normal' | 'high' | 'urgent'
-
-const filters: Array<{ value: Filter; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'active', label: 'Active' },
-  { value: 'completed', label: 'Completed' },
-]
-
 const defaultGroup = 'Inbox'
-const defaultPriority: Priority = 'normal'
-
-const priorityOptions: Array<{ value: Priority; label: string; className: string }> = [
-  {
-    value: 'low',
-    label: 'Low',
-    className: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-  },
-  { value: 'normal', label: 'Normal', className: 'border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300 ' },
-  { value: 'high', label: 'High', className: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300' },
-  { value: 'urgent', label: 'Urgent', className: 'border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300' },
-]
 
 function normalizePriority(priority: Todo['priority'] | undefined): Priority {
   return priorityOptions.find((option) => option.value === priority)?.value ?? defaultPriority
@@ -121,6 +79,14 @@ export default function TodoPage() {
 
     return Array.from(new Set([defaultGroup, ...names])).sort((a, b) => a.localeCompare(b))
   }, [todos])
+  const groupOptions = useMemo(
+    () =>
+      groups.map((groupName) => ({
+        value: groupName,
+        label: groupName,
+      })),
+    [groups],
+  )
   const visibleTodos = todos.filter((todo) => {
     if (filter === 'active') return !todo.completed
     if (filter === 'completed') return todo.completed
@@ -204,24 +170,28 @@ export default function TodoPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <form onSubmit={addTodo} className="grid gap-2 md:grid-cols-[1fr_10rem_9rem_auto]">
+            <form onSubmit={addTodo} className="flex gap-4 md:grid-cols-[1fr_10rem_9rem_auto]">
               <Input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Add a new task..."
                 aria-label="Todo title"
+                className="flex-1"
               />
-              <Input
-                value={group}
-                onChange={(event) => setGroup(event.target.value)}
-                placeholder="Group"
-                aria-label="Todo group"
-              />
-              <PrioritySelect value={priority} onChange={setPriority} ariaLabel="Todo priority" />
-              <Button type="submit" disabled={!title.trim()}>
-                <CirclePlus aria-hidden="true" />
-                Add
-              </Button>
+              <div className="flex gap-2">
+                <SearchableSelect
+                  value={group}
+                  options={groupOptions}
+                  placeholder="Group"
+                  allowCustom
+                  onChange={setGroup}
+                />
+                <PrioritySelect value={priority} onChange={setPriority} />
+                <Button type="submit" disabled={!title.trim()}>
+                  <CirclePlus aria-hidden="true" />
+                  Add
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -329,7 +299,7 @@ function TodoItem({
             <CalendarClock className="size-3.5" aria-hidden="true" />
             {formatCreatedAt(todo.createdAt)}
           </ItemDescription>
-        </ItemContent>{' '}
+        </ItemContent>
       </div>
       <div className="flex flex-row gap-1">
         <Badge variant="outline" className="gap-1">
@@ -346,185 +316,6 @@ function TodoItem({
         <DeleteTodoPopover todo={todo} onDelete={onDelete} />
       </ItemActions>
     </Item>
-  )
-}
-
-function PrioritySelect({
-  id,
-  value,
-  onChange,
-  ariaLabel = 'Choose priority',
-}: {
-  id?: string
-  value: Priority
-  onChange: (priority: Priority) => void
-  ariaLabel?: string
-}) {
-  return (
-    <select
-      id={id}
-      value={value}
-      onChange={(event) => onChange(event.target.value as Priority)}
-      aria-label={ariaLabel}
-      className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-8 rounded-lg border px-2 text-sm outline-none focus-visible:ring-3"
-    >
-      {priorityOptions.map((priority) => (
-        <option key={priority.value} value={priority.value}>
-          {priority.label}
-        </option>
-      ))}
-    </select>
-  )
-}
-
-function TodoEditDialog({
-  todo,
-  groups,
-  onUpdate,
-}: {
-  todo: Todo
-  groups: string[]
-  onUpdate: (id: string, updates: Partial<Pick<Todo, 'title' | 'group' | 'priority'>>) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState(todo.title)
-  const [group, setGroup] = useState(todo.group)
-  const [priority, setPriority] = useState<Priority>(todo.priority)
-
-  const resetDraft = () => {
-    setTitle(todo.title)
-    setGroup(todo.group)
-    setPriority(todo.priority)
-  }
-
-  const save = () => {
-    if (!title.trim()) return
-
-    onUpdate(todo.id, {
-      title,
-      group,
-      priority,
-    })
-    setOpen(false)
-    toast.success('Todo updated', { position: 'top-center' })
-  }
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (nextOpen) resetDraft()
-        setOpen(nextOpen)
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" disabled={todo.completed} aria-label="Edit todo">
-          <PencilLine aria-hidden="true" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit todo</DialogTitle>
-          <DialogDescription>Update the name, group, and priority for this active task.</DialogDescription>
-        </DialogHeader>
-
-        <div className="grid flex-1 content-start gap-6">
-          <div className="space-y-2">
-            <label htmlFor={`todo-title-${todo.id}`} className="text-sm font-medium">
-              Name
-            </label>
-            <Input
-              id={`todo-title-${todo.id}`}
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              className="h-16 px-4 text-3xl font-semibold"
-              autoFocus
-            />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <label htmlFor={`todo-group-${todo.id}`} className="text-sm font-medium">
-                Group
-              </label>
-              <Input id={`todo-group-${todo.id}`} value={group} onChange={(event) => setGroup(event.target.value)} />
-              <select
-                value={group}
-                onChange={(event) => setGroup(event.target.value)}
-                aria-label="Choose existing group"
-                className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-8 w-full rounded-lg border px-2 text-sm outline-none focus-visible:ring-3"
-              >
-                {groups.map((groupName) => (
-                  <option key={groupName} value={groupName}>
-                    {groupName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor={`todo-priority-${todo.id}`} className="text-sm font-medium">
-                Priority
-              </label>
-              <PrioritySelect
-                id={`todo-priority-${todo.id}`}
-                value={priority}
-                onChange={setPriority}
-                ariaLabel="Edit priority"
-              />
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
-            </Button>
-          </DialogClose>
-          <Button type="button" onClick={save} disabled={!title.trim()}>
-            Save changes
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-function DeleteTodoPopover({ todo, onDelete }: { todo: Todo; onDelete: (id: string) => void }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" aria-label="Delete todo">
-          <Trash2 aria-hidden="true" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" side="left" className="w-80">
-        <PopoverHeader>
-          <PopoverTitle>Delete this todo?</PopoverTitle>
-          <PopoverDescription>
-            This will permanently remove &quot;{todo.title}&quot; from local storage. This action cannot be undone.
-          </PopoverDescription>
-        </PopoverHeader>
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() => {
-              onDelete(todo.id)
-              setOpen(false)
-            }}
-          >
-            Delete
-          </Button>
-        </div>
-      </PopoverContent>
-    </Popover>
   )
 }
 
