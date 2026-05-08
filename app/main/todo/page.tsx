@@ -20,6 +20,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item'
 import {
   Popover,
   PopoverContent,
@@ -310,39 +311,41 @@ function TodoItem({
   const priority = priorityOptions.find((option) => option.value === todo.priority) ?? priorityOptions[1]
 
   return (
-    <Card className={cn('relative overflow-visible! py-2', todo.completed && 'bg-muted/30')}>
+    <Item className={cn('bg-card relative items-center overflow-visible py-2', todo.completed && 'bg-muted/30')}>
       {!todo.completed && <div className="bg-primary/80 absolute -top-1 -right-1 size-3 rounded-full"></div>}
-      <CardContent className="grid gap-3 md:grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] md:items-center">
+      <div className="flex flex-1 flex-row items-center gap-4">
         <Checkbox
           checked={todo.completed}
           onCheckedChange={(checked) => onToggle(todo.id, checked === true)}
           aria-label={`Mark ${todo.title} as ${todo.completed ? 'active' : 'completed'}`}
         />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <p className={cn('truncate text-lg font-medium', todo.completed && 'text-muted-foreground line-through')}>
+        <ItemContent className="flex min-w-0 flex-col gap-1">
+          <ItemTitle
+            className={cn('truncate text-lg font-medium', todo.completed && 'text-muted-foreground line-through')}
+          >
             {todo.title}
-          </p>
-          <p className="text-muted-foreground flex items-center gap-1 text-sm">
+          </ItemTitle>
+          <ItemDescription className="text-muted-foreground flex items-center gap-1 text-sm">
             <CalendarClock className="size-3.5" aria-hidden="true" />
             {formatCreatedAt(todo.createdAt)}
-          </p>
-        </div>
-        <div className="flex flex-row gap-1">
-          <Badge variant="outline" className="gap-1">
-            <Folder aria-hidden="true" />
-            {todo.group}
-          </Badge>
-          <Badge variant="outline" className={cn('gap-1', priority.className)}>
-            <Flag aria-hidden="true" />
-            {priority.label}
-          </Badge>
-        </div>
-        <div className="flex flex-row gap-1">
-          <TodoEditDialog todo={todo} groups={groups} onUpdate={onUpdate} />
-          <DeleteTodoPopover todo={todo} onDelete={onDelete} />
-        </div>
-      </CardContent>
-    </Card>
+          </ItemDescription>
+        </ItemContent>{' '}
+      </div>
+      <div className="flex flex-row gap-1">
+        <Badge variant="outline" className="gap-1">
+          <Folder aria-hidden="true" />
+          {todo.group}
+        </Badge>
+        <Badge variant="outline" className={cn('gap-1', priority.className)}>
+          <Flag aria-hidden="true" />
+          {priority.label}
+        </Badge>
+      </div>
+      <ItemActions className="flex flex-row gap-1">
+        <TodoEditDialog todo={todo} groups={groups} onUpdate={onUpdate} />
+        <DeleteTodoPopover todo={todo} onDelete={onDelete} />
+      </ItemActions>
+    </Item>
   )
 }
 

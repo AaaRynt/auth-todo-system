@@ -4,12 +4,14 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-const PUBLIC_PATHS = ['/auth']
+const PUBLIC_PATHS = ['/', '/auth']
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const isPublicPath = PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))
+  const isPublicPath = PUBLIC_PATHS.some(
+    (path) => pathname === path || (path !== '/' && pathname.startsWith(`${path}/`)),
+  )
   const [authorizedPath, setAuthorizedPath] = useState<string | null>(null)
 
   useEffect(() => {
