@@ -20,6 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <link rel="icon" type="image/svg+xml" href="/img/favicon.ico" />
       <body className={cn('flex', 'min-h-full', GeistSans.className, GeistSans.variable, GeistMono.variable)}>
         <ThemeProvider defaultTheme="system">
           <AuthGuard>{children}</AuthGuard>

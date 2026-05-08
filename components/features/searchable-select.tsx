@@ -90,7 +90,7 @@ export function SearchableSelect({
             <button
               key={option.value}
               type="button"
-              className="hover:bg-muted flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm outline-none"
+              className="hover:bg-muted flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm outline-none"
               onClick={() => selectValue(option.value)}
             >
               <span className="truncate">{option.label}</span>
@@ -102,10 +102,10 @@ export function SearchableSelect({
           ))}
           {canCreate && (
             <>
-              <hr />
+              <hr className="my-2" />
               <button
                 type="button"
-                className="hover:bg-muted mt-1 flex w-full justify-center rounded-md px-2 py-1.5 text-left text-sm outline-none"
+                className="hover:bg-muted mt-1 flex w-full justify-center rounded-md px-3 py-2 text-left text-sm outline-none"
                 onClick={() => selectValue(search.trim())}
               >
                 <span>

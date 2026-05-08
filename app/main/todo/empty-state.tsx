@@ -1,0 +1,20 @@
+// app/main/todo/empty-state.tsx
+import { ListTodo } from 'lucide-react'
+import { Tfilter } from '@/app/data/type'
+
+export function EmptyState({ filter }: { filter: Tfilter }) {
+  const message =
+    filter === 'completed'
+      ? 'No completed tasks yet.'
+      : filter === 'active'
+        ? 'No active tasks. Everything is done.'
+        : 'No tasks yet. Add your first todo above.'
+
+  return (
+    <div className="flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed text-center">
+      <ListTodo className="text-muted-foreground mb-3 size-8" aria-hidden="true" />
+      <p className="text-sm font-medium">{message}</p>
+      <p className="text-muted-foreground mt-1 text-sm">Your todos are stored locally in this browser.</p>
+    </div>
+  )
+}

@@ -1,57 +1,16 @@
 // app/main/todo/page.tsx
 'use client'
 
-import { CalendarClock, CirclePlus, Flag, Folder, ListTodo } from 'lucide-react'
+import { CirclePlus, Folder, ListTodo } from 'lucide-react'
 import type * as React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { defaultPriority, filters, priorityOptions } from '@/app/data/const'
+import { defaultGroup, defaultPriority, filters } from '@/app/data/const'
 import type { Tfilter, Tpriority, Ttodo } from '@/app/data/type'
-import { DeleteTodoPopover, PrioritySelect, SearchableSelect, TodoEditDialog } from '@/components/features/'
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Checkbox,
-  Input,
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemTitle,
-} from '@/components/ui/'
-import { cn } from '@/lib/utils'
-
-const defaultGroup = 'Inbox'
-
-function normalizePriority(priority: Ttodo['priority'] | undefined): Tpriority {
-  return priorityOptions.find((option) => option.value === priority)?.value ?? defaultPriority
-}
-
-function normalizeTodo(todo: Partial<Ttodo>): Ttodo {
-  return {
-    id: todo.id ?? crypto.randomUUID(),
-    title: todo.title ?? 'Untitled task',
-    group: todo.group?.trim() || defaultGroup,
-    priority: normalizePriority(todo.priority),
-    completed: todo.completed ?? false,
-    createdAt: todo.createdAt ?? Date.now(),
-  }
-}
-
-function formatCreatedAt(timestamp: number) {
-  const date = new Date(timestamp)
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-
-  return `${month}/${day}, ${hours}:${minutes}`
-}
+import { EmptyState, PrioritySelect, TodoItem } from '@/app/main/todo'
+import { SearchableSelect } from '@/components/features/'
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from '@/components/ui/'
+import { normalizeTodo } from '@/lib/normalize-todo'
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<Ttodo[]>([])
@@ -163,7 +122,7 @@ export default function TodoPage() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <section className="grid gap-4 lg:grid-cols-[1fr_18rem]">
+      <section className="grid gap-4 lg:grid-cols-[1fr_18rem] lg:gap-8">
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -216,32 +175,32 @@ export default function TodoPage() {
         </Card>
       </section>
 
-      <section className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-2">
-          {filters.map((item) => (
-            <Button
-              key={item.value}
-              type="button"
-              variant={filter === item.value ? 'secondary' : 'outline'}
-              onClick={() => setFilter(item.value)}
-            >
-              {item.label}
-            </Button>
-          ))}
+      <section className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div className="flex gap-4">
+            {filters.map((item) => (
+              <Button
+                key={item.value}
+                type="button"
+                variant={filter === item.value ? 'secondary' : 'outline'}
+                onClick={() => setFilter(item.value)}
+                className="w-24"
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+          <Button type="button" variant="ghost" disabled={completedCount === 0} onClick={clearCompleted}>
+            Clear completed
+          </Button>
         </div>
-        <Button type="button" variant="ghost" disabled={completedCount === 0} onClick={clearCompleted}>
-          Clear completed
-        </Button>
-      </section>
-
-      <section className="flex flex-col gap-3">
         {visibleTodos.length > 0 ? (
           Object.entries(groupedTodos).map(([groupName, groupTodos]) => (
             <div key={groupName} className="space-y-3">
               <div className="flex items-center gap-2">
+                <Badge variant="secondary">{groupTodos.length}</Badge>
                 <Folder className="text-muted-foreground size-4" aria-hidden="true" />
                 <h2 className="text-sm font-medium">{groupName}</h2>
-                <Badge variant="secondary">{groupTodos.length}</Badge>
               </div>
               {groupTodos.map((todo) => (
                 <TodoItem
@@ -268,77 +227,6 @@ function Stat({ label, value }: { label: string; value: number }) {
     <div className="bg-background rounded-lg border p-3">
       <div className="text-2xl font-semibold">{value}</div>
       <div className="text-muted-foreground text-xs">{label}</div>
-    </div>
-  )
-}
-
-function TodoItem({
-  todo,
-  groups,
-  onToggle,
-  onUpdate,
-  onDelete,
-}: {
-  todo: Ttodo
-  groups: string[]
-  onToggle: (id: string, completed: boolean) => void
-  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => void
-  onDelete: (id: string) => void
-}) {
-  const priority = priorityOptions.find((option) => option.value === todo.priority) ?? priorityOptions[1]
-
-  return (
-    <Item className={cn('bg-card relative items-center overflow-visible py-2', todo.completed && 'bg-muted/30')}>
-      {!todo.completed && <div className="bg-primary/80 absolute -top-1 -right-1 size-3 rounded-full"></div>}
-      <div className="flex flex-1 flex-row items-center gap-4">
-        <Checkbox
-          checked={todo.completed}
-          onCheckedChange={(checked) => onToggle(todo.id, checked === true)}
-          aria-label={`Mark ${todo.title} as ${todo.completed ? 'active' : 'completed'}`}
-        />
-        <ItemContent className="flex min-w-0 flex-col gap-1">
-          <ItemTitle
-            className={cn('truncate text-lg font-medium', todo.completed && 'text-muted-foreground line-through')}
-          >
-            {todo.title}
-          </ItemTitle>
-          <ItemDescription className="text-muted-foreground flex items-center gap-1 text-sm">
-            <CalendarClock className="size-3.5" aria-hidden="true" />
-            {formatCreatedAt(todo.createdAt)}
-          </ItemDescription>
-        </ItemContent>
-      </div>
-      <div className="flex flex-row gap-1">
-        <Badge variant="outline" className="gap-1">
-          <Folder aria-hidden="true" />
-          {todo.group}
-        </Badge>
-        <Badge variant="outline" className={cn('gap-1', priority.className)}>
-          <Flag aria-hidden="true" />
-          {priority.label}
-        </Badge>
-      </div>
-      <ItemActions className="flex flex-row gap-1">
-        <TodoEditDialog todo={todo} groups={groups} onUpdate={onUpdate} />
-        <DeleteTodoPopover todo={todo} onDelete={onDelete} />
-      </ItemActions>
-    </Item>
-  )
-}
-
-function EmptyState({ filter }: { filter: Tfilter }) {
-  const message =
-    filter === 'completed'
-      ? 'No completed tasks yet.'
-      : filter === 'active'
-        ? 'No active tasks. Everything is done.'
-        : 'No tasks yet. Add your first todo above.'
-
-  return (
-    <div className="flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed text-center">
-      <ListTodo className="text-muted-foreground mb-3 size-8" aria-hidden="true" />
-      <p className="text-sm font-medium">{message}</p>
-      <p className="text-muted-foreground mt-1 text-sm">Your todos are stored locally in this browser.</p>
     </div>
   )
 }
