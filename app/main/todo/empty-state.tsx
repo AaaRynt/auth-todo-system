@@ -1,13 +1,16 @@
-// app/main/todo/empty-state.tsx
+// /Users/rynt/Desktop/Code/auth-todo-system/app/main/todo/empty-state.tsx
 import { ListTodo } from 'lucide-react'
-import { Tfilter } from '@/app/data/type'
+import type { Tfilter } from '@/app/data/type'
 
-export function EmptyState({ filter }: { filter: Tfilter }) {
-  const message = {
-    all: 'No tasks yet. Add your first todo above.',
-    active: 'No active tasks. Everything is done.',
-    completed: 'No completed tasks yet.',
-  }[filter]
+export function EmptyState({ filter, search, groupName }: { filter: Tfilter; search?: string; groupName?: string }) {
+  const searching = Boolean(search?.trim())
+  const message = searching
+    ? 'No matching tasks. Try a different title.'
+    : {
+        all: groupName ? 'No tasks in this group yet.' : 'No tasks yet. Add your first todo above.',
+        active: 'No active tasks. Everything is done.',
+        completed: 'No completed tasks yet.',
+      }[filter]
 
   return (
     <div className="flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed text-center">

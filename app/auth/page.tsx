@@ -73,6 +73,8 @@ function Login({ onSwitch, onUsernameChange }: { onSwitch: () => void; onUsernam
             JSON.stringify({
               id: crypto.randomUUID(),
               username: username.trim(),
+              password: password,
+              createdAt: Date.now(),
             }),
           )
           router.push('/main')

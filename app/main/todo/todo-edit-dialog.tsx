@@ -5,6 +5,7 @@ import { PencilLine } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import type { Tpriority, Ttodo } from '@/app/data/type'
+import { PrioritySelect } from '@/app/main/todo/priority-select'
 import { SearchableSelect } from '@/components/features/'
 import {
   Button,
@@ -18,7 +19,6 @@ import {
   DialogTrigger,
   Input,
 } from '@/components/ui/'
-import { PrioritySelect } from './'
 
 export function TodoEditDialog({
   todo,
