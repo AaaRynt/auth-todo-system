@@ -3,12 +3,11 @@ import { ListTodo } from 'lucide-react'
 import { Tfilter } from '@/app/data/type'
 
 export function EmptyState({ filter }: { filter: Tfilter }) {
-  const message =
-    filter === 'completed'
-      ? 'No completed tasks yet.'
-      : filter === 'active'
-        ? 'No active tasks. Everything is done.'
-        : 'No tasks yet. Add your first todo above.'
+  const message = {
+    all: 'No tasks yet. Add your first todo above.',
+    active: 'No active tasks. Everything is done.',
+    completed: 'No completed tasks yet.',
+  }[filter]
 
   return (
     <div className="flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed text-center">

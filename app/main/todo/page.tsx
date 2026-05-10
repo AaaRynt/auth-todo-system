@@ -5,11 +5,12 @@ import { CirclePlus, Folder, ListTodo } from 'lucide-react'
 import type * as React from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { defaultGroup, defaultPriority, filters } from '@/app/data/const'
+import { defaultGroup, defaultPriority } from '@/app/data/const'
+import { filters } from '@/app/data/const'
 import type { Tfilter, Tpriority, Ttodo } from '@/app/data/type'
 import { EmptyState, PrioritySelect, TodoItem } from '@/app/main/todo'
-import { SearchableSelect } from '@/components/features/'
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from '@/components/ui/'
+import { SearchableSelect } from '@/components/features'
+import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from '@/components/ui'
 import { normalizeTodo } from '@/lib/normalize-todo'
 
 export default function TodoPage() {
@@ -122,103 +123,117 @@ export default function TodoPage() {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <section className="grid gap-4 lg:grid-cols-[1fr_18rem] lg:gap-8">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="size-10 rounded-lg p-0">
-                <ListTodo className="size-5" aria-hidden="true" />
-              </Badge>
-              <div>
-                <CardTitle className="text-xl">Todo Manager</CardTitle>
-                <CardDescription>Capture, track, and finish your local tasks.</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={addTodo} className="flex gap-4 md:grid-cols-[1fr_10rem_9rem_auto]">
-              <Input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="Add a new task..."
-                aria-label="Todo title"
-                className="flex-1"
-              />
-              <div className="flex gap-2">
-                <SearchableSelect
-                  value={group}
-                  options={groupOptions}
-                  placeholder="Group"
-                  allowCustom
-                  onChange={setGroup}
-                />
-                <PrioritySelect value={priority} onChange={setPriority} />
-                <Button type="submit" disabled={!title.trim()}>
-                  <CirclePlus aria-hidden="true" />
-                  Add
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+      <TodoManager
+        title={title}
+        group={group}
+        priority={priority}
+        groupOptions={groupOptions}
+        totalCount={todos.length}
+        activeCount={activeCount}
+        completedCount={completedCount}
+        completionRate={completionRate}
+        onTitleChange={setTitle}
+        onGroupChange={setGroup}
+        onPriorityChange={setPriority}
+        onAddTodo={addTodo}
+      />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Progress</CardTitle>
-            <CardDescription>{completionRate}% completed</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2 text-center">
-            <Stat label="Total" value={todos.length} />
-            <Stat label="Active" value={activeCount} />
-            <Stat label="Done" value={completedCount} />
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4">
-            {filters.map((item) => (
-              <Button
-                key={item.value}
-                type="button"
-                variant={filter === item.value ? 'secondary' : 'outline'}
-                onClick={() => setFilter(item.value)}
-                className="w-24"
-              >
-                {item.label}
-              </Button>
-            ))}
-          </div>
-          <Button type="button" variant="ghost" disabled={completedCount === 0} onClick={clearCompleted}>
-            Clear completed
-          </Button>
-        </div>
-        {visibleTodos.length > 0 ? (
-          Object.entries(groupedTodos).map(([groupName, groupTodos]) => (
-            <div key={groupName} className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{groupTodos.length}</Badge>
-                <Folder className="text-muted-foreground size-4" aria-hidden="true" />
-                <h2 className="text-sm font-medium">{groupName}</h2>
-              </div>
-              {groupTodos.map((todo) => (
-                <TodoItem
-                  key={todo.id}
-                  todo={todo}
-                  groups={groups}
-                  onToggle={toggleTodo}
-                  onUpdate={updateTodo}
-                  onDelete={deleteTodo}
-                />
-              ))}
-            </div>
-          ))
-        ) : (
-          <EmptyState filter={filter} />
-        )}
-      </section>
+      <TodoList
+        filter={filter}
+        completedCount={completedCount}
+        groups={groups}
+        groupedTodos={groupedTodos}
+        visibleCount={visibleTodos.length}
+        onFilterChange={setFilter}
+        onClearCompleted={clearCompleted}
+        onToggle={toggleTodo}
+        onUpdate={updateTodo}
+        onDelete={deleteTodo}
+      />
     </div>
+  )
+}
+
+function TodoManager({
+  title,
+  group,
+  priority,
+  groupOptions,
+  totalCount,
+  activeCount,
+  completedCount,
+  completionRate,
+  onTitleChange,
+  onGroupChange,
+  onPriorityChange,
+  onAddTodo,
+}: {
+  title: string
+  group: string
+  priority: Tpriority
+  groupOptions: { value: string; label: string }[]
+  totalCount: number
+  activeCount: number
+  completedCount: number
+  completionRate: number
+  onTitleChange: (title: string) => void
+  onGroupChange: (group: string) => void
+  onPriorityChange: (priority: Tpriority) => void
+  onAddTodo: (event: React.FormEvent<HTMLFormElement>) => void
+}) {
+  return (
+    <section className="grid gap-4 lg:grid-cols-[1fr_18rem] lg:gap-8">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="size-10 rounded-lg p-0">
+              <ListTodo className="size-5" aria-hidden="true" />
+            </Badge>
+            <div>
+              <CardTitle className="text-xl">Todo Manager</CardTitle>
+              <CardDescription>Capture, track, and finish your local tasks.</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onAddTodo} className="flex gap-4 md:grid-cols-[1fr_10rem_9rem_auto]">
+            <Input
+              value={title}
+              onChange={(event) => onTitleChange(event.target.value)}
+              placeholder="Add a new task..."
+              aria-label="Todo title"
+              className="flex-1"
+            />
+            <div className="flex gap-2">
+              <SearchableSelect
+                value={group}
+                options={groupOptions}
+                placeholder="Group"
+                allowCustom
+                onChange={onGroupChange}
+              />
+              <PrioritySelect value={priority} onChange={onPriorityChange} />
+              <Button type="submit" disabled={!title.trim()}>
+                <CirclePlus aria-hidden="true" />
+                Add
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Progress</CardTitle>
+          <CardDescription>{completionRate}% completed</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-3 gap-2 text-center">
+          <Stat label="Total" value={totalCount} />
+          <Stat label="Active" value={activeCount} />
+          <Stat label="Done" value={completedCount} />
+        </CardContent>
+      </Card>
+    </section>
   )
 }
 
@@ -228,5 +243,76 @@ function Stat({ label, value }: { label: string; value: number }) {
       <div className="text-2xl font-semibold">{value}</div>
       <div className="text-muted-foreground text-xs">{label}</div>
     </div>
+  )
+}
+
+function TodoList({
+  filter,
+  completedCount,
+  groups,
+  groupedTodos,
+  visibleCount,
+  onFilterChange,
+  onClearCompleted,
+  onToggle,
+  onUpdate,
+  onDelete,
+}: {
+  filter: Tfilter
+  completedCount: number
+  groups: string[]
+  groupedTodos: Record<string, Ttodo[]>
+  visibleCount: number
+  onFilterChange: (filter: Tfilter) => void
+  onClearCompleted: () => void
+  onToggle: (id: string, completed: boolean) => void
+  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => void
+  onDelete: (id: string) => void
+}) {
+  return (
+    <section className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div className="flex gap-4">
+          {filters.map((item) => (
+            <Button
+              key={item.value}
+              type="button"
+              variant={filter === item.value ? 'secondary' : 'outline'}
+              onClick={() => onFilterChange(item.value)}
+              className="w-24"
+            >
+              {item.label}
+            </Button>
+          ))}
+        </div>
+        <Button type="button" variant="ghost" disabled={completedCount === 0} onClick={onClearCompleted}>
+          Clear completed
+        </Button>
+      </div>
+
+      {visibleCount > 0 ? (
+        Object.entries(groupedTodos).map(([groupName, groupTodos]) => (
+          <div key={groupName} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{groupTodos.length}</Badge>
+              <Folder className="text-muted-foreground size-4" aria-hidden="true" />
+              <h2 className="text-sm font-medium">{groupName}</h2>
+            </div>
+            {groupTodos.map((todo) => (
+              <TodoItem
+                key={todo.id}
+                todo={todo}
+                groups={groups}
+                onToggle={onToggle}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+              />
+            ))}
+          </div>
+        ))
+      ) : (
+        <EmptyState filter={filter} />
+      )}
+    </section>
   )
 }

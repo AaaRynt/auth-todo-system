@@ -10,11 +10,27 @@ export const priorityOptions: Array<{ value: Tpriority; label: string; className
   {
     value: 'low',
     label: 'Low',
-    className: 'border-green-500/40 text-green-700 dark:text-green-300',
+    className:
+      'border-green-500/40 text-green-600 focus:text-green-700 not-data-[variant=destructive]:focus:**:text-green-700 dark:text-green-300 dark:focus:text-green-400 dark:not-data-[variant=destructive]:focus:**:text-green-400',
   },
-  { value: 'normal', label: 'Normal', className: 'border-blue-500/40  text-blue-700 dark:text-blue-300 ' },
-  { value: 'high', label: 'High', className: 'border-yellow-500/40 text-yellow-700 dark:text-yellow-300' },
-  { value: 'urgent', label: 'Urgent', className: 'border-red-500/40  text-red-700 dark:text-red-300' },
+  {
+    value: 'normal',
+    label: 'Normal',
+    className:
+      'border-blue-500/40 text-blue-600 focus:text-blue-700 not-data-[variant=destructive]:focus:**:text-blue-700 dark:text-blue-300 dark:focus:text-blue-400 dark:not-data-[variant=destructive]:focus:**:text-blue-400',
+  },
+  {
+    value: 'high',
+    label: 'High',
+    className:
+      'border-yellow-500/40 text-yellow-600 focus:text-yellow-700 not-data-[variant=destructive]:focus:**:text-yellow-700 dark:text-yellow-300 dark:focus:text-yellow-400 dark:not-data-[variant=destructive]:focus:**:text-yellow-400',
+  },
+  {
+    value: 'urgent',
+    label: 'Urgent',
+    className:
+      'border-red-500/40 text-red-600 focus:text-red-700 not-data-[variant=destructive]:focus:**:text-red-700 dark:text-red-300 dark:focus:text-red-400 dark:not-data-[variant=destructive]:focus:**:text-red-400',
+  },
 ]
 export const defaultPriority: Tpriority = 'normal'
 export const defaultGroup: string = 'Inbox'

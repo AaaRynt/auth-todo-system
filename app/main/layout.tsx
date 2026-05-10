@@ -1,6 +1,5 @@
 'use client'
 
-import { ChartBar, ListTodo, Settings, UserCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
@@ -55,29 +54,25 @@ function Aside() {
     {
       href: '/main/todo',
       label: 'Todo',
-      icon: ListTodo,
     },
     {
       href: '/main/chart',
       label: 'Chart',
-      icon: ChartBar,
     },
     {
       href: '/main/setting',
       label: 'Setting',
-      icon: Settings,
     },
     {
       href: '/main/account',
       label: 'Account',
-      icon: UserCircle2,
     },
   ]
   const pathname = usePathname()
 
   return (
     <aside className="bg-card/50 w-60 shrink-0 border-r px-4 py-12">
-      <nav aria-label="Main navigation" className="flex flex-col gap-4">
+      <nav aria-label="Main navigation" className="flex flex-col gap-2">
         {navItems.map((item) => {
           const active = pathname === item.href
 
@@ -88,10 +83,9 @@ function Aside() {
               aria-current={active ? 'page' : undefined}
               className={cn(
                 buttonVariants({ variant: active ? 'secondary' : 'ghost', size: 'lg' }),
-                'text-card-foreground w-full justify-start gap-2 py-6 text-xl',
+                'text-card-foreground w-full justify-start gap-2 text-lg',
               )}
             >
-              <item.icon aria-hidden="true" className="size-5" />
               {item.label}
             </Link>
           )
