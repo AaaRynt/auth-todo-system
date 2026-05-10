@@ -71,18 +71,16 @@ export function NewGroupDialog({
         </DialogHeader>
 
         <div className="grid flex-1 content-start gap-6">
-          <div className="space-y-2">
-            <label htmlFor="new-group-name" className="text-sm font-medium">
-              Name
-            </label>
-            <Input
-              id="new-group-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className="px-4 text-4xl font-semibold"
-              autoFocus
-            />
-          </div>
+          <label htmlFor="new-group-name" className="text-sm font-medium">
+            Name
+          </label>
+          <Input
+            id="new-group-name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            className="mt-4 px-4 text-4xl font-semibold"
+            autoFocus
+          />
         </div>
 
         <DialogFooter>

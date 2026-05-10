@@ -4,6 +4,7 @@
 import { Eye, EyeOff, LockKeyhole, User2, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { TlocalUser } from '@/app/data/type'
 import { Group } from '@/components/features/'
 import {
   Button,
@@ -75,7 +76,7 @@ function Login({ onSwitch, onUsernameChange }: { onSwitch: () => void; onUsernam
               username: username.trim(),
               password: password,
               createdAt: Date.now(),
-            }),
+            } satisfies TlocalUser),
           )
           router.push('/main')
         }}

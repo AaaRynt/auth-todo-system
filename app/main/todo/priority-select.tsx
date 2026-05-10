@@ -22,10 +22,10 @@ export function PrioritySelect({
       <SelectTrigger id={id} updown={true} className={cn('w-24', selected.className)}>
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="min-w-0!">
         <SelectGroup>
           {priorityOptions.map((item) => (
-            <SelectItem value={item.value} key={item.value} className={item.className}>
+            <SelectItem value={item.value} key={item.value} className={cn('pl-3!', item.className)}>
               {item.label}
             </SelectItem>
           ))}

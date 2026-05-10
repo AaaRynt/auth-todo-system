@@ -1,22 +1,17 @@
-// /Users/rynt/Desktop/Code/auth-todo-system/app/main/layout.tsx
+// app/main/layout.tsx
 'use client'
 
-import { Folder, ListChecks, Search, UserCircle } from 'lucide-react'
+import { Folder, ListChecks, Search } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { TlocalUser } from '@/app/data/type'
 import { NewGroupDialog } from '@/app/main/todo/new-group-dialog'
 import { TodoProvider, useTodoContext } from '@/app/main/todo/todo-provider'
-import { Group } from '@/components/features/'
+import { Account, Group } from '@/components/features/'
 import { Input, buttonVariants } from '@/components/ui/'
 import { cn } from '@/lib/utils'
-
-type TlocalUser = {
-  id: string
-  username: string
-  createdAt: number
-} | null
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<TlocalUser>(null)
@@ -44,7 +39,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     <TodoProvider>
       <div className="bg-background text-foreground relative flex min-h-dvh flex-1 flex-col">
         <Header />
-        <main className="flex w-full flex-1">
+        <main className="mt-14 flex min-h-0 w-full flex-1">
           <Aside user={user} />
           <section className="relative flex flex-1 p-6">{children}</section>
         </main>
@@ -55,7 +50,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
 function Header() {
   return (
-    <header className="flex h-14 w-full items-center justify-between border-b px-4">
+    <header className="bg-background fixed top-0 right-0 left-0 z-50 flex h-14 w-full items-center justify-between border-b px-4">
       <Link href="/main/all" className="text-sm font-medium">
         Auth Todo
       </Link>
@@ -70,7 +65,7 @@ function Aside({ user }: { user: TlocalUser }) {
   const activeGroup = getActiveGroup(pathname)
 
   return (
-    <aside className="bg-card/50 flex w-64 shrink-0 flex-col border-r p-4">
+    <aside className="bg-card/50 sticky top-14 flex h-[calc(100dvh-3.5rem)] w-64 shrink-0 flex-col border-r p-4">
       <nav aria-label="Todo navigation" className="flex min-h-0 flex-1 flex-col gap-4">
         <div className="relative">
           <Search
@@ -86,7 +81,7 @@ function Aside({ user }: { user: TlocalUser }) {
           />
         </div>
         <hr />
-
+        <NewGroupDialog groups={groups} onCreateGroup={createGroup} />
         <Link
           href="/main/all"
           aria-current={pathname === '/main/all' ? 'page' : undefined}
@@ -122,19 +117,8 @@ function Aside({ user }: { user: TlocalUser }) {
             })}
           </div>
         </div>
-
-        <NewGroupDialog groups={groups} onCreateGroup={createGroup} />
       </nav>
-
-      <div className="mt-4 border-t pt-4">
-        <div className="text-muted-foreground flex h-12 items-center gap-3 rounded-md px-3 text-sm">
-          <UserCircle className="size-5 shrink-0" aria-hidden="true" />
-          <div className="min-w-0">
-            <div className="text-card-foreground truncate font-medium">{user?.username}</div>
-            <div className="truncate text-xs">{user ? `${getUserAgeDays(user.createdAt)} days` : ''}</div>
-          </div>
-        </div>
-      </div>
+      <Account user={user} />
     </aside>
   )
 }
@@ -146,11 +130,6 @@ function normalizeLocalUser(user: TlocalUser) {
     ...user,
     createdAt: user.createdAt || Date.now(),
   }
-}
-
-function getUserAgeDays(createdAt: number) {
-  const day = 1000 * 60 * 60 * 24
-  return Math.max(1, Math.ceil((Date.now() - createdAt) / day))
 }
 
 function getActiveGroup(pathname: string) {

@@ -1,4 +1,4 @@
-// /Users/rynt/Desktop/Code/auth-todo-system/app/main/todo/index.ts
+// app/main/todo/index.ts
 export { DeleteTodoPopover } from './delete-todo-popover'
 export { EmptyState } from './empty-state'
 export { NewGroupDialog } from './new-group-dialog'

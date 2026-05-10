@@ -35,7 +35,7 @@ function ThemeToggle() {
 function GitHub() {
   return (
     <Button asChild variant="outline" size="icon-lg">
-      <a href="https://github.com/AaaRynt/Wikipedia-Chart" target="_blank" rel="noreferrer">
+      <a href="https://github.com/AaaRynt/auth-todo-system" target="_blank" rel="noreferrer">
         <RiGithubFill />
       </a>
     </Button>

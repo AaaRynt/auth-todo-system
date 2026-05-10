@@ -1,4 +1,4 @@
-// /Users/rynt/Desktop/Code/auth-todo-system/app/main/todo/empty-state.tsx
+// app/main/todo/empty-state.tsx
 import { ListTodo } from 'lucide-react'
 import type { Tfilter } from '@/app/data/type'
 

@@ -92,6 +92,7 @@ export function TodoPage({ groupName }: { groupName?: string }) {
         heading={scopeTitle}
         title={title}
         group={group}
+        groupName={groupName}
         priority={priority}
         groupOptions={groupOptions}
         totalCount={scopedTodos.length}
@@ -126,6 +127,7 @@ function TodoManager({
   heading,
   title,
   group,
+  groupName,
   priority,
   groupOptions,
   totalCount,
@@ -140,6 +142,7 @@ function TodoManager({
   heading: string
   title: string
   group: string
+  groupName?: string
   priority: Tpriority
   groupOptions: { value: string; label: string }[]
   totalCount: number
@@ -161,7 +164,6 @@ function TodoManager({
             </Badge>
             <div>
               <CardTitle className="text-xl">{heading}</CardTitle>
-              <CardDescription>Capture, track, and finish your local tasks.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -175,13 +177,16 @@ function TodoManager({
               className="flex-1"
             />
             <div className="flex gap-2">
-              <SearchableSelect
-                value={group}
-                options={groupOptions}
-                placeholder="Group"
-                allowCustom
-                onChange={onGroupChange}
-              />
+              {!groupName && (
+                <SearchableSelect
+                  value={group}
+                  options={groupOptions}
+                  placeholder="Group"
+                  allowCustom
+                  onChange={onGroupChange}
+                />
+              )}
+
               <PrioritySelect value={priority} onChange={onPriorityChange} />
               <Button type="submit" disabled={!title.trim()}>
                 <CirclePlus aria-hidden="true" />
@@ -265,13 +270,15 @@ function TodoList({
       </div>
 
       {visibleCount > 0 ? (
-        Object.entries(groupedTodos).map(([groupName, groupTodos]) => (
-          <div key={groupName} className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">{groupTodos.length}</Badge>
-              <Folder className="text-muted-foreground size-4" aria-hidden="true" />
-              <h2 className="text-sm font-medium">{groupName}</h2>
-            </div>
+        Object.entries(groupedTodos).map(([sectionGroupName, groupTodos]) => (
+          <div key={sectionGroupName} className="space-y-3">
+            {!groupName && (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{groupTodos.length}</Badge>
+                <Folder className="text-muted-foreground size-4" aria-hidden="true" />
+                <h2 className="text-sm font-medium">{sectionGroupName}</h2>
+              </div>
+            )}
             {groupTodos.map((todo) => (
               <TodoItem
                 key={todo.id}

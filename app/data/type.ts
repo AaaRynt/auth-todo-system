@@ -1,4 +1,10 @@
 // app/data/type.ts
+export type TlocalUser = {
+  id: string
+  username: string
+  password: string
+  createdAt: number
+} | null
 export type Ttodo = {
   id: string
   title: string
