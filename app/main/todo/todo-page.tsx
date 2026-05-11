@@ -159,9 +159,9 @@ function TodoManager({
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="size-10 rounded-lg p-0">
-              <ListTodo className="size-5" aria-hidden="true" />
-            </Badge>
+            <div className="flex size-10 items-center justify-center rounded-lg border">
+              <ListTodo aria-hidden="true" size="16" />
+            </div>
             <div>
               <CardTitle className="text-xl">{heading}</CardTitle>
             </div>

@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { TlocalUser } from '@/app/data/type'
 import { NewGroupDialog } from '@/app/main/todo/new-group-dialog'
 import { TodoProvider, useTodoContext } from '@/app/main/todo/todo-provider'
-import { Account, Group } from '@/components/features/'
+import { Account, Group, GroupEdit } from '@/components/features/'
 import { Input, buttonVariants } from '@/components/ui/'
 import { cn } from '@/lib/utils'
 
@@ -65,7 +65,7 @@ function Aside({ user }: { user: TlocalUser }) {
   const activeGroup = getActiveGroup(pathname)
 
   return (
-    <aside className="bg-card/50 sticky top-14 flex h-[calc(100dvh-3.5rem)] w-64 shrink-0 flex-col border-r p-4">
+    <aside className="bg-card/50 sticky top-14 flex h-[calc(100dvh-3.5rem)] w-64 shrink-0 flex-col border-r px-2 py-3">
       <nav aria-label="Todo navigation" className="flex min-h-0 flex-1 flex-col gap-4">
         <div className="relative">
           <Search
@@ -80,8 +80,8 @@ function Aside({ user }: { user: TlocalUser }) {
             className="pl-9"
           />
         </div>
-        <hr />
         <NewGroupDialog groups={groups} onCreateGroup={createGroup} />
+        <hr />
         <Link
           href="/main/all"
           aria-current={pathname === '/main/all' ? 'page' : undefined}
@@ -107,17 +107,21 @@ function Aside({ user }: { user: TlocalUser }) {
                   aria-current={active ? 'page' : undefined}
                   className={cn(
                     buttonVariants({ variant: active ? 'secondary' : 'ghost', size: 'sm' }),
-                    'text-card-foreground w-full justify-start gap-2',
+                    'text-card-foreground w-full justify-between',
                   )}
                 >
-                  <Folder className="size-4" aria-hidden="true" />
-                  <span className="truncate">{group}</span>
+                  <div className="flex items-center gap-2">
+                    <Folder className="size-4" aria-hidden="true" />
+                    <span className="truncate">{group}</span>
+                  </div>
+                  <GroupEdit />
                 </Link>
               )
             })}
           </div>
         </div>
       </nav>
+      <hr />
       <Account user={user} />
     </aside>
   )

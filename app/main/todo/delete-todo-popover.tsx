@@ -13,19 +13,10 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from '@/components/ui/'
-
-const trashSoundSrc = '/audio/drag%20to%20trash.mp3'
+import { playTrashSound } from '@/lib/play-trash-sound'
 
 export function DeleteTodoPopover({ todo, onDelete }: { todo: Ttodo; onDelete: (id: string) => void }) {
   const [open, setOpen] = useState(false)
-
-  const playTrashSound = () => {
-    const audio = new Audio(trashSoundSrc)
-
-    void audio.play().catch(() => {
-      // Browsers may block audio in some contexts; deletion should still proceed.
-    })
-  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

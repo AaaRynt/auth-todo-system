@@ -1,7 +1,7 @@
 // app/main/todo/new-group-dialog.tsx
 'use client'
 
-import { Plus } from 'lucide-react'
+import { SquarePen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -60,7 +60,7 @@ export function NewGroupDialog({
     >
       <DialogTrigger asChild>
         <Button type="button" variant="outline" className="w-full justify-start">
-          <Plus aria-hidden="true" />
+          <SquarePen aria-hidden="true" />
           New Group
         </Button>
       </DialogTrigger>
