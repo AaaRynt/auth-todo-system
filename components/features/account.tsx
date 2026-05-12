@@ -35,10 +35,11 @@ export function Account({ user }: { user: TlocalUser }) {
       </PopoverTrigger>
       <PopoverContent className="w-60">
         <Field user={user} />
-        <Button variant="destructive">
+        <Button variant="outline">
           <LogOut />
-          Quit your Login
+          Log out
         </Button>
+        <Button variant="destructive">Deactivate account</Button>
       </PopoverContent>
     </Popover>
   )

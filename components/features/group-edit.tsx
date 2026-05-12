@@ -12,7 +12,7 @@ export function GroupEdit() {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger>
+      <PopoverTrigger asChild>
         <Button variant="ghost" size="icon-sm">
           <Ellipsis />
         </Button>

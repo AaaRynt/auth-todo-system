@@ -15,7 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Field,
   Input,
+  Label,
 } from '@/components/ui/'
 
 export function NewGroupDialog({
@@ -70,18 +72,18 @@ export function NewGroupDialog({
           <DialogDescription>Create an empty todo group and open it in the sidebar.</DialogDescription>
         </DialogHeader>
 
-        <div className="grid flex-1 content-start gap-6">
-          <label htmlFor="new-group-name" className="text-sm font-medium">
-            Name
-          </label>
+        <Field className="flex flex-1 flex-row!">
+          <Label htmlFor="new-group-name" className="flex-1 text-sm font-medium">
+            Name:
+          </Label>
           <Input
             id="new-group-name"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="mt-4 px-4 text-4xl font-semibold"
+            className="flex-3 px-4"
             autoFocus
           />
-        </div>
+        </Field>
 
         <DialogFooter>
           <DialogClose asChild>

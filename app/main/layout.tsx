@@ -4,13 +4,13 @@
 import { Folder, ListChecks, Search } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { TlocalUser } from '@/app/data/type'
 import { NewGroupDialog } from '@/app/main/todo/new-group-dialog'
 import { TodoProvider, useTodoContext } from '@/app/main/todo/todo-provider'
 import { Account, Group, GroupEdit } from '@/components/features/'
-import { Input, buttonVariants } from '@/components/ui/'
+import { Badge, Input, buttonVariants } from '@/components/ui/'
 import { cn } from '@/lib/utils'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -61,8 +61,16 @@ function Header() {
 
 function Aside({ user }: { user: TlocalUser }) {
   const pathname = usePathname()
-  const { groups, search, setSearch, createGroup } = useTodoContext()
+  const { todos, groups, search, setSearch, createGroup } = useTodoContext()
   const activeGroup = getActiveGroup(pathname)
+  const groupTodoCounts = useMemo(
+    () =>
+      todos.reduce<Record<string, number>>((counts, todo) => {
+        counts[todo.group] = (counts[todo.group] ?? 0) + 1
+        return counts
+      }, {}),
+    [todos],
+  )
 
   return (
     <aside className="bg-card/50 sticky top-14 flex h-[calc(100dvh-3.5rem)] w-64 shrink-0 flex-col border-r px-2 py-3">
@@ -111,7 +119,10 @@ function Aside({ user }: { user: TlocalUser }) {
                   )}
                 >
                   <div className="flex items-center gap-2">
-                    <Folder className="size-4" aria-hidden="true" />
+                    <div className="text-muted-foreground absolute flex w-4 translate-x-0.5 items-center justify-center text-[0.5rem]">
+                      {groupTodoCounts[group] ?? 0}
+                    </div>
+                    <Folder className="size-5" aria-hidden="true" />
                     <span className="truncate">{group}</span>
                   </div>
                   <GroupEdit />
