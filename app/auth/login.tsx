@@ -12,6 +12,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  Checkbox,
   Field,
   FieldGroup,
   FieldLabel,
@@ -118,6 +119,10 @@ export function Login({
                     )}
                   </Button>
                 </div>
+                <Field orientation="horizontal">
+                  <Checkbox id="save-password" />
+                  <FieldLabel htmlFor="save-password">Save password</FieldLabel>
+                </Field>
               </Field>
             </FieldGroup>
           </FieldSet>

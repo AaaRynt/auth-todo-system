@@ -1,7 +1,8 @@
 // lib/prisma.ts
-import { PrismaClient } from '@/lib/generated/prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@/app/generated/prisma/client'
 
-const globalForPrisma = globalThis as unknown as {
+const globalForPrisma = globalThis as {
   prisma?: PrismaClient
 }
 
@@ -12,13 +13,9 @@ function createPrismaClient() {
     throw new Error('DATABASE_URL is not configured.')
   }
 
-  if (!databaseUrl.startsWith('prisma+postgres://')) {
-    throw new Error('Current Prisma setup expects a prisma+postgres:// DATABASE_URL.')
-  }
+  const adapter = new PrismaPg({ connectionString: databaseUrl })
 
-  return new PrismaClient({
-    accelerateUrl: databaseUrl,
-  })
+  return new PrismaClient({ adapter })
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
