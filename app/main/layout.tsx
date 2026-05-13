@@ -10,7 +10,7 @@ import { TlocalUser } from '@/app/data/type'
 import { NewGroupDialog } from '@/app/main/todo/new-group-dialog'
 import { TodoProvider, useTodoContext } from '@/app/main/todo/todo-provider'
 import { Account, Group, GroupEdit } from '@/components/features/'
-import { Badge, Input, buttonVariants } from '@/components/ui/'
+import { Input, buttonVariants } from '@/components/ui/'
 import { cn } from '@/lib/utils'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
