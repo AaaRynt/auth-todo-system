@@ -1,10 +1,10 @@
-// app/auth/Login.tsx
+// app/auth/login.tsx
 'use client'
 
 import { Eye, EyeOff, LockKeyhole, User2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import type { ComponentProps } from 'react'
 import { useState } from 'react'
-import { TlocalUser } from '@/app/data/type'
 import {
   Button,
   Card,
@@ -12,13 +12,13 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Checkbox,
   Field,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
   FieldSet,
   Input,
+  Spinner,
 } from '@/components/ui/'
 
 export function Login({
@@ -31,30 +31,45 @@ export function Login({
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
-  const canSubmit = username.trim().length > 0 && password.length > 0
+  const canSubmit = username.trim().length > 0 && password.length > 0 && !isSubmitting
+
+  const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = async (event) => {
+    event.preventDefault()
+    setError('')
+    setIsSubmitting(true)
+
+    // await new Promise((resolve) => setTimeout(resolve, 2000))
+
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        username: username.trim(),
+        password,
+      }),
+    })
+    const data = (await response.json().catch(() => null)) as { message?: string } | null
+
+    if (!response.ok) {
+      setError(data?.message ?? 'Login failed.')
+      setIsSubmitting(false)
+      return
+    }
+
+    window.sessionStorage.removeItem('main-welcome-shown')
+    router.push('/main')
+  }
 
   return (
     <Card className="w-md shadow-xl">
       <CardHeader className="gap-2">
         <CardTitle className="text-xl">Login</CardTitle>
       </CardHeader>
-      <form
-        className="space-y-8"
-        onSubmit={(event) => {
-          event.preventDefault()
-          window.localStorage.setItem(
-            'user',
-            JSON.stringify({
-              id: crypto.randomUUID(),
-              username: username.trim(),
-              password: password,
-              createdAt: Date.now(),
-            } satisfies TlocalUser),
-          )
-          router.push('/main')
-        }}
-      >
+      <form className="space-y-8" onSubmit={handleSubmit}>
         <CardContent>
           <FieldSet>
             <FieldGroup>
@@ -75,6 +90,7 @@ export function Login({
                     onChange={(event) => {
                       setUsername(event.target.value)
                       onUsernameChange(event.target.value)
+                      setError('')
                     }}
                     required
                   />
@@ -100,7 +116,10 @@ export function Login({
                     autoComplete="current-password"
                     className="pr-12 pl-12"
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={(event) => {
+                      setPassword(event.target.value)
+                      setError('')
+                    }}
                     required
                   />
                   <Button
@@ -119,23 +138,29 @@ export function Login({
                     )}
                   </Button>
                 </div>
-                <Field orientation="horizontal">
-                  <Checkbox id="save-password" />
-                  <FieldLabel htmlFor="save-password">Save password</FieldLabel>
-                </Field>
               </Field>
             </FieldGroup>
           </FieldSet>
+          {error ? <p className="text-destructive mt-4 text-sm">{error}</p> : null}
         </CardContent>
         <CardFooter>
           <FieldGroup>
             <Button type="submit" size="lg" className="w-full rounded-full" disabled={!canSubmit}>
-              Login
+              {isSubmitting ? (
+                <>
+                  <Spinner />
+                  Logging in
+                </>
+              ) : (
+                'Login'
+              )}
             </Button>
             <FieldSeparator>or</FieldSeparator>
-            <Button type="button" variant="outline" size="lg" className="w-full rounded-full" onClick={onSwitch}>
-              Sign up
-            </Button>
+            {!isSubmitting && (
+              <Button type="button" variant="outline" size="lg" className="w-full rounded-full" onClick={onSwitch}>
+                Sign up
+              </Button>
+            )}
           </FieldGroup>
         </CardFooter>
       </form>

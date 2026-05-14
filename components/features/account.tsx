@@ -1,6 +1,6 @@
 // components/features/account.tsx
 import { LogOut, UserCircle, UserRoundKey } from 'lucide-react'
-import type { TlocalUser } from '@/app/data/type'
+import type { TAuthUser } from '@/app/data/type'
 import {
   Button,
   Dialog,
@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/'
 
-export function Account({ user }: { user: TlocalUser }) {
+export function Account({ user }: { user: TAuthUser }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -45,7 +45,7 @@ export function Account({ user }: { user: TlocalUser }) {
   )
 }
 
-function Field({ user }: { user: TlocalUser }) {
+function Field({ user }: { user: TAuthUser }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -61,9 +61,9 @@ function Field({ user }: { user: TlocalUser }) {
         <FieldLabel htmlFor="nickname">Nickname</FieldLabel>
         <Input id="nickname" placeholder={user?.username} />
         <FieldLabel htmlFor="password">Password</FieldLabel>
-        <Input id="password" placeholder={user?.password} />
+        <Input id="password" type="password" placeholder="New password" />
         <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
-        <Input id="confirm-password" />
+        <Input id="confirm-password" type="password" />
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="outline">
@@ -77,8 +77,8 @@ function Field({ user }: { user: TlocalUser }) {
   )
 }
 
-function getUserAgeDays(createdAt: number) {
+function getUserAgeDays(createdAt: string) {
   const day = 1000 * 60 * 60 * 24
-  const count = Math.max(1, Math.ceil((Date.now() - createdAt) / day))
+  const count = Math.max(1, Math.ceil((Date.now() - new Date(createdAt).getTime()) / day))
   return `${count} day${count > 1 ? 's' : ''}`
 }

@@ -1,9 +1,8 @@
 // app/data/type.ts
-export type TlocalUser = {
+export type TAuthUser = {
   id: string
   username: string
-  password: string
-  createdAt: number
+  createdAt: string
 } | null
 export type TGroup = {
   id: string
@@ -23,4 +22,4 @@ export type Ttodo = {
 export type Tfilter = 'all' | 'active' | 'completed'
 export type Tpriority = 'low' | 'normal' | 'high' | 'urgent'
 
-//预留 Pomodoro 番茄钟吗？
+//[todo] 预留 Pomodoro 番茄钟吗？

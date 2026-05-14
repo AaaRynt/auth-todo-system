@@ -2,6 +2,8 @@
 'use client'
 
 import { Eye, EyeOff, LockKeyhole, User2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import type { ComponentProps } from 'react'
 import { useState } from 'react'
 import {
   Button,
@@ -22,6 +24,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
   Input,
+  Spinner,
 } from '@/components/ui/'
 
 export function Signup({
@@ -32,24 +35,62 @@ export function Signup({
   onUsernameChange: (username: string) => void
 }) {
   const [showPassword, setShowPassword] = useState(false)
-  const [accept, setAccept] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [accept, setAccept] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const passwordMeetsPolicy =
+    password.length >= 6 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password)
   const canSubmit =
-    username.trim().length > 0 && password.length > 0 && confirm.length > 0 && password === confirm && accept
+    username.trim().length > 0 &&
+    passwordMeetsPolicy &&
+    confirm.length > 0 &&
+    password === confirm &&
+    accept &&
+    !isSubmitting
+
+  const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = async (event) => {
+    event.preventDefault()
+    setError('')
+    setIsSubmitting(true)
+
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        username: username.trim(),
+        password,
+      }),
+    })
+    const data = (await response.json().catch(() => null)) as { message?: string } | null
+
+    if (!response.ok) {
+      setError(data?.message ?? 'Sign up failed.')
+      setIsSubmitting(false)
+      return
+    }
+
+    window.sessionStorage.removeItem('main-welcome-shown')
+    router.push('/main')
+  }
 
   return (
     <Card className="w-md shadow-xl">
       <CardHeader className="gap-2">
         <CardTitle className="text-xl">Sign up</CardTitle>
         <CardAction>
-          <Button type="button" variant="link" onClick={onSwitch}>
-            Login
-          </Button>
+          {!isSubmitting && (
+            <Button type="button" variant="link" onClick={onSwitch}>
+              Login
+            </Button>
+          )}
         </CardAction>
       </CardHeader>
-      <form className="space-y-8">
+      <form className="space-y-8" onSubmit={handleSubmit}>
         <CardContent>
           <FieldSet>
             <FieldGroup>
@@ -70,6 +111,7 @@ export function Signup({
                     onChange={(event) => {
                       setUsername(event.target.value)
                       onUsernameChange(event.target.value)
+                      setError('')
                     }}
                     required
                   />
@@ -90,7 +132,11 @@ export function Signup({
                     autoComplete="current-password"
                     className="pr-12 pl-12"
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
+                    onChange={(event) => {
+                      setPassword(event.target.value)
+                      setError('')
+                    }}
+                    aria-invalid={password.length > 0 && !passwordMeetsPolicy}
                     required
                   />
                   <Button
@@ -109,6 +155,9 @@ export function Signup({
                     )}
                   </Button>
                 </div>
+                <p className="text-muted-foreground text-xs">
+                  At least 6 characters with uppercase letters, lowercase letters, numbers.
+                </p>
               </Field>
               <Field>
                 <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
@@ -124,7 +173,10 @@ export function Signup({
                     autoComplete="new-password"
                     className="pr-12 pl-12"
                     value={confirm}
-                    onChange={(event) => setConfirm(event.target.value)}
+                    onChange={(event) => {
+                      setConfirm(event.target.value)
+                      setError('')
+                    }}
                     aria-invalid={password.length > 0 && confirm.length > 0 && password !== confirm}
                     required
                   />
@@ -151,22 +203,27 @@ export function Signup({
         <CardFooter className="flex flex-col gap-2">
           <FieldLabel>
             <Field orientation="horizontal">
-              <Checkbox
-                id="toggle-checkbox-2"
-                name="toggle-checkbox-2"
-                checked={accept}
-                onCheckedChange={(checked) => setAccept(checked === true)}
-              />
+              <Checkbox checked={accept} onCheckedChange={(checked) => setAccept(checked === true)} />
               <FieldContent className="flex-row items-center">
                 Accept&nbsp;
                 <TermsConditions />
               </FieldContent>
             </Field>
           </FieldLabel>
+          {error ? <p className="text-destructive">{error}</p> : null}
           <Field>
-            <Button type="submit" size="lg" className="w-full rounded-full" disabled={!canSubmit}>
-              Sign up
-            </Button>
+            <div className={canSubmit ? 'auto' : 'cursor-not-allowed'}>
+              <Button type="submit" size="lg" className="w-full rounded-full" disabled={!canSubmit}>
+                {isSubmitting ? (
+                  <>
+                    <Spinner />
+                    Signing up
+                  </>
+                ) : (
+                  'Sign up'
+                )}
+              </Button>
+            </div>
           </Field>
         </CardFooter>
       </form>

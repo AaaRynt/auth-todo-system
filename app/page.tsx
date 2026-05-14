@@ -8,13 +8,23 @@ export default function Home() {
   const router = useRouter()
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      const user = window.localStorage.getItem('user')
+    let cancelled = false
 
-      router.replace(user ? '/main' : '/auth')
-    })
+    async function redirectBySession() {
+      const response = await fetch('/api/auth/me', {
+        credentials: 'same-origin',
+      }).catch(() => null)
 
-    return () => window.cancelAnimationFrame(frame)
+      if (cancelled) return
+
+      router.replace(response?.ok ? '/main' : '/auth')
+    }
+
+    redirectBySession()
+
+    return () => {
+      cancelled = true
+    }
   }, [router])
 
   return (

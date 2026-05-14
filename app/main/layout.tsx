@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { TlocalUser } from '@/app/data/type'
+import type { TAuthUser } from '@/app/data/type'
 import { NewGroupDialog } from '@/app/main/todo/new-group-dialog'
 import { TodoProvider, useTodoContext } from '@/app/main/todo/todo-provider'
 import { Account, Group, GroupEdit } from '@/components/features/'
@@ -14,25 +14,32 @@ import { Input, buttonVariants } from '@/components/ui/'
 import { cn } from '@/lib/utils'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<TlocalUser>(null)
+  const [user, setUser] = useState<TAuthUser>(null)
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      const storedUser = normalizeLocalUser(JSON.parse(window.localStorage.getItem('user') || 'null') as TlocalUser)
+    let cancelled = false
 
-      if (storedUser) {
-        window.localStorage.setItem('user', JSON.stringify(storedUser))
-      }
+    async function loadUser() {
+      const response = await fetch('/api/auth/me', {
+        credentials: 'same-origin',
+      }).catch(() => null)
+      const data = response?.ok ? ((await response.json()) as { user: NonNullable<TAuthUser> }) : null
 
-      setUser(storedUser)
+      if (cancelled) return
 
-      if (storedUser?.username && window.sessionStorage.getItem('main-welcome-shown') !== 'true') {
+      setUser(data?.user ?? null)
+
+      if (data?.user.username && window.sessionStorage.getItem('main-welcome-shown') !== 'true') {
         window.sessionStorage.setItem('main-welcome-shown', 'true')
-        toast.info(`welcome,${storedUser.username}`, { position: 'top-center' })
+        toast.info(`welcome,${data.user.username}`, { position: 'top-center' })
       }
-    })
+    }
 
-    return () => window.cancelAnimationFrame(frame)
+    loadUser()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   return (
@@ -59,7 +66,7 @@ function Header() {
   )
 }
 
-function Aside({ user }: { user: TlocalUser }) {
+function Aside({ user }: { user: TAuthUser }) {
   const pathname = usePathname()
   const { todos, groups, search, setSearch, createGroup } = useTodoContext()
   const activeGroup = getActiveGroup(pathname)
@@ -136,15 +143,6 @@ function Aside({ user }: { user: TlocalUser }) {
       <Account user={user} />
     </aside>
   )
-}
-
-function normalizeLocalUser(user: TlocalUser) {
-  if (!user) return null
-
-  return {
-    ...user,
-    createdAt: user.createdAt || Date.now(),
-  }
 }
 
 function getActiveGroup(pathname: string) {

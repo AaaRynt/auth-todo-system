@@ -18,15 +18,31 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (isPublicPath) {
       return
     }
-    const frame = window.requestAnimationFrame(() => {
-      const user = window.localStorage.getItem('user')
-      if (!user) {
+
+    let cancelled = false
+
+    async function authorize() {
+      setAuthorizedPath(null)
+
+      const response = await fetch('/api/auth/me', {
+        credentials: 'same-origin',
+      }).catch(() => null)
+
+      if (cancelled) return
+
+      if (!response?.ok) {
         router.replace('/auth')
         return
       }
+
       setAuthorizedPath(pathname)
-    })
-    return () => window.cancelAnimationFrame(frame)
+    }
+
+    authorize()
+
+    return () => {
+      cancelled = true
+    }
   }, [isPublicPath, pathname, router])
 
   if (!isPublicPath && authorizedPath !== pathname) return null
