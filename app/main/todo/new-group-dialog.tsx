@@ -16,8 +16,8 @@ import {
   DialogTitle,
   DialogTrigger,
   Field,
+  FieldLabel,
   Input,
-  Label,
 } from '@/components/ui/'
 
 export function NewGroupDialog({
@@ -73,9 +73,9 @@ export function NewGroupDialog({
         </DialogHeader>
 
         <Field className="flex flex-1 flex-row!">
-          <Label htmlFor="new-group-name" className="flex-1 text-sm font-medium">
+          <FieldLabel htmlFor="new-group-name" className="flex-1 text-sm font-medium">
             Name:
-          </Label>
+          </FieldLabel>
           <Input
             id="new-group-name"
             value={name}
