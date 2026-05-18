@@ -8,18 +8,22 @@ import { cn } from '@/lib/utils'
 
 export function PrioritySelect({
   id,
+  name,
+  className,
   value,
   onChange,
 }: {
   id?: string
+  name?: string
+  className?: string
   value: Tpriority
   onChange: (priority: Tpriority) => void
 }) {
   const selected = priorityOptions.find((item) => item.value === value) ?? priorityOptions[1]
 
   return (
-    <Select value={value} onValueChange={(nextValue) => onChange(nextValue as Tpriority)}>
-      <SelectTrigger id={id} updown={true} className={cn('w-24', selected.className)}>
+    <Select name={name} value={value} onValueChange={(nextValue) => onChange(nextValue as Tpriority)}>
+      <SelectTrigger id={id} updown={true} className={cn('w-24', selected.className, className)}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent className="min-w-0!">

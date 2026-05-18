@@ -2,7 +2,8 @@
 'use client'
 
 import { PencilLine } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import type { ComponentProps } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import type { Tpriority, Ttodo } from '@/app/data/type'
 import { PrioritySelect } from '@/app/main/todo/priority-select'
@@ -17,6 +18,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Field,
+  FieldLabel,
   Input,
 } from '@/components/ui/'
 
@@ -33,6 +36,10 @@ export function TodoEditDialog({
   const [title, setTitle] = useState(todo.title)
   const [group, setGroup] = useState(todo.group)
   const [priority, setPriority] = useState<Tpriority>(todo.priority)
+  const formId = useId()
+  const titleId = `${formId}-title`
+  const groupId = `${formId}-group`
+  const priorityId = `${formId}-priority`
   const groupOptions = useMemo(
     () =>
       groups.map((groupName) => ({
@@ -59,6 +66,10 @@ export function TodoEditDialog({
     setOpen(false)
     toast.success('Todo updated', { position: 'top-center' })
   }
+  const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = (event) => {
+    event.preventDefault()
+    save()
+  }
 
   return (
     <Dialog
@@ -79,43 +90,57 @@ export function TodoEditDialog({
           <DialogDescription>Update the name, group, and priority for this active task.</DialogDescription>
         </DialogHeader>
 
-        <div className="grid flex-1 content-start gap-6">
-          <div className="space-y-2">
-            <label htmlFor={`todo-title-${todo.id}`} className="text-sm font-medium">
-              Name
-            </label>
+        <form className="grid flex-1 content-start gap-6" onSubmit={handleSubmit}>
+          <Field>
+            <FieldLabel htmlFor={titleId}>Name</FieldLabel>
             <Input
-              id={`todo-title-${todo.id}`}
+              id={titleId}
+              name="title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               className="px-4 text-4xl font-semibold"
               autoFocus
+              required
             />
-          </div>
+          </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <SearchableSelect
-              value={group}
-              options={groupOptions}
-              placeholder="Group"
-              allowCustom
-              onChange={setGroup}
-            />
+            <Field>
+              <FieldLabel htmlFor={groupId}>Group</FieldLabel>
+              <SearchableSelect
+                id={groupId}
+                value={group}
+                options={groupOptions}
+                placeholder="Group"
+                allowCustom
+                className="w-full"
+                onChange={setGroup}
+              />
+            </Field>
 
-            <PrioritySelect value={priority} onChange={setPriority} />
+            <Field>
+              <FieldLabel htmlFor={priorityId}>Priority</FieldLabel>
+              <PrioritySelect
+                id={priorityId}
+                name="priority"
+                className="w-full"
+                value={priority}
+                onChange={setPriority}
+              />
+            </Field>
           </div>
-        </div>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" disabled={!title.trim()}>
+              Save changes
             </Button>
-          </DialogClose>
-          <Button type="button" onClick={save} disabled={!title.trim()}>
-            Save changes
-          </Button>
-        </DialogFooter>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

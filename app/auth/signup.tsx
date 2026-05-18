@@ -17,6 +17,8 @@ import {
   Checkbox,
   Field,
   FieldContent,
+  FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSet,
@@ -51,6 +53,9 @@ export function Signup({
     password === confirm &&
     accept &&
     !isSubmitting
+  const passwordDescriptionId = 'signup-password-description'
+  const errorId = 'signup-form-error'
+  const termsId = 'signup-terms'
 
   const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = async (event) => {
     event.preventDefault()
@@ -108,6 +113,8 @@ export function Signup({
                     autoComplete="username"
                     className="pl-12"
                     value={username}
+                    aria-describedby={error ? errorId : undefined}
+                    aria-invalid={!!error}
                     onChange={(event) => {
                       setUsername(event.target.value)
                       onUsernameChange(event.target.value)
@@ -132,6 +139,7 @@ export function Signup({
                     autoComplete="current-password"
                     className="pr-12 pl-12"
                     value={password}
+                    aria-describedby={error ? `${passwordDescriptionId} ${errorId}` : passwordDescriptionId}
                     onChange={(event) => {
                       setPassword(event.target.value)
                       setError('')
@@ -155,9 +163,9 @@ export function Signup({
                     )}
                   </Button>
                 </div>
-                <p className="text-muted-foreground text-xs">
+                <FieldDescription id={passwordDescriptionId} className="text-xs">
                   At least 6 characters with uppercase letters, lowercase letters, numbers.
-                </p>
+                </FieldDescription>
               </Field>
               <Field>
                 <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
@@ -173,6 +181,7 @@ export function Signup({
                     autoComplete="new-password"
                     className="pr-12 pl-12"
                     value={confirm}
+                    aria-describedby={error ? errorId : undefined}
                     onChange={(event) => {
                       setConfirm(event.target.value)
                       setError('')
@@ -201,16 +210,23 @@ export function Signup({
           </FieldSet>
         </CardContent>
         <CardFooter className="flex flex-col gap-2">
-          <FieldLabel>
-            <Field orientation="horizontal">
-              <Checkbox checked={accept} onCheckedChange={(checked) => setAccept(checked === true)} />
-              <FieldContent className="flex-row items-center">
-                Accept&nbsp;
-                <TermsConditions />
-              </FieldContent>
-            </Field>
-          </FieldLabel>
-          {error ? <p className="text-destructive">{error}</p> : null}
+          <Field orientation="horizontal">
+            <Checkbox
+              id={termsId}
+              name="terms"
+              checked={accept}
+              onCheckedChange={(checked) => setAccept(checked === true)}
+              aria-describedby={error ? errorId : undefined}
+              required
+            />
+            <FieldContent className="flex-row items-center">
+              <FieldLabel htmlFor={termsId} className="w-auto">
+                Accept
+              </FieldLabel>
+              <TermsConditions />
+            </FieldContent>
+          </Field>
+          {error ? <FieldError id={errorId}>{error}</FieldError> : null}
           <Field>
             <div className={canSubmit ? 'auto' : 'cursor-not-allowed'}>
               <Button type="submit" size="lg" className="w-full rounded-full" disabled={!canSubmit}>

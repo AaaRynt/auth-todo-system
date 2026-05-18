@@ -2,8 +2,8 @@
 'use client'
 
 import { CirclePlus, Folder, ListTodo } from 'lucide-react'
-import type * as React from 'react'
-import { useMemo, useState } from 'react'
+import type { ComponentProps } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { defaultGroup, defaultPriority, filters } from '@/app/data/const'
 import type { Tfilter, Tpriority, Ttodo } from '@/app/data/type'
@@ -12,7 +12,18 @@ import { PrioritySelect } from '@/app/main/todo/priority-select'
 import { TodoItem } from '@/app/main/todo/todo-item'
 import { useTodoContext } from '@/app/main/todo/todo-provider'
 import { SearchableSelect } from '@/components/features'
-import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Input } from '@/components/ui'
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Field,
+  FieldLabel,
+  Input,
+} from '@/components/ui'
 
 export function TodoPage({ groupName }: { groupName?: string }) {
   const { todos, groups, search, addTodo, toggleTodo, updateTodo, deleteTodo, clearCompleted } = useTodoContext()
@@ -61,7 +72,7 @@ export function TodoPage({ groupName }: { groupName?: string }) {
     return result
   }, {})
 
-  const submitTodo = (event: React.FormEvent<HTMLFormElement>) => {
+  const submitTodo: NonNullable<ComponentProps<'form'>['onSubmit']> = (event) => {
     event.preventDefault()
 
     const created = addTodo({
@@ -152,8 +163,13 @@ function TodoManager({
   onTitleChange: (title: string) => void
   onGroupChange: (group: string) => void
   onPriorityChange: (priority: Tpriority) => void
-  onAddTodo: (event: React.FormEvent<HTMLFormElement>) => void
+  onAddTodo: NonNullable<ComponentProps<'form'>['onSubmit']>
 }) {
+  const formId = useId()
+  const titleId = `${formId}-title`
+  const groupId = `${formId}-group`
+  const priorityId = `${formId}-priority`
+
   return (
     <section className="grid gap-4 lg:grid-cols-[1fr_18rem] lg:gap-8">
       <Card>
@@ -168,26 +184,51 @@ function TodoManager({
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={onAddTodo} className="flex gap-4 md:grid-cols-[1fr_10rem_9rem_auto]">
-            <Input
-              value={title}
-              onChange={(event) => onTitleChange(event.target.value)}
-              placeholder="Add a new task..."
-              aria-label="Todo title"
-              className="flex-1"
-            />
+          <form onSubmit={onAddTodo} className="flex flex-col gap-4 md:flex-row">
+            <Field className="flex-1">
+              <FieldLabel htmlFor={titleId} className="sr-only">
+                Todo title
+              </FieldLabel>
+              <Input
+                id={titleId}
+                name="title"
+                value={title}
+                onChange={(event) => onTitleChange(event.target.value)}
+                placeholder="Add a new task..."
+                className="flex-1"
+                required
+              />
+            </Field>
             <div className="flex gap-2">
               {!groupName && (
-                <SearchableSelect
-                  value={group}
-                  options={groupOptions}
-                  placeholder="Group"
-                  allowCustom
-                  onChange={onGroupChange}
-                />
+                <Field className="w-36">
+                  <FieldLabel htmlFor={groupId} className="sr-only">
+                    Group
+                  </FieldLabel>
+                  <SearchableSelect
+                    id={groupId}
+                    value={group}
+                    options={groupOptions}
+                    placeholder="Group"
+                    allowCustom
+                    className="w-full"
+                    onChange={onGroupChange}
+                  />
+                </Field>
               )}
 
-              <PrioritySelect value={priority} onChange={onPriorityChange} />
+              <Field className="w-24">
+                <FieldLabel htmlFor={priorityId} className="sr-only">
+                  Priority
+                </FieldLabel>
+                <PrioritySelect
+                  id={priorityId}
+                  name="priority"
+                  className="w-full"
+                  value={priority}
+                  onChange={onPriorityChange}
+                />
+              </Field>
               <Button type="submit" disabled={!title.trim()}>
                 <CirclePlus aria-hidden="true" />
                 Add

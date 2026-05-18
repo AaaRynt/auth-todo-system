@@ -17,6 +17,8 @@ import {
   DialogTitle,
   DialogTrigger,
   Field,
+  FieldDescription,
+  FieldError,
   FieldLabel,
   Input,
   Popover,
@@ -67,6 +69,11 @@ function ChangePasswordField() {
     confirmPassword.length > 0 &&
     newPassword === confirmPassword &&
     !isSubmitting
+  const currentPasswordId = 'change-password-current'
+  const newPasswordId = 'change-password-new'
+  const confirmPasswordId = 'change-password-confirm'
+  const passwordDescriptionId = 'change-password-description'
+  const messageId = 'change-password-message'
 
   const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = async (event) => {
     event.preventDefault()
@@ -125,15 +132,18 @@ function ChangePasswordField() {
           <DialogHeader>
             <DialogTitle>Change password</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
-            <FieldLabel htmlFor="current-password">Current Password</FieldLabel>
+          <Field>
+            <FieldLabel htmlFor={currentPasswordId}>Current Password</FieldLabel>
             <div className="relative">
               <Input
-                id="current-password"
+                id={currentPasswordId}
+                name="currentPassword"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 className="pr-12"
                 value={currentPassword}
+                aria-describedby={error || success ? messageId : undefined}
+                aria-invalid={!!error}
                 onChange={(event) => {
                   setCurrentPassword(event.target.value)
                   setError('')
@@ -157,16 +167,18 @@ function ChangePasswordField() {
                 )}
               </Button>
             </div>
-          </div>
-          <div className="space-y-2">
-            <FieldLabel htmlFor="new-password">New Password</FieldLabel>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={newPasswordId}>New Password</FieldLabel>
             <div className="relative">
               <Input
-                id="new-password"
+                id={newPasswordId}
+                name="newPassword"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 className="pr-12"
                 value={newPassword}
+                aria-describedby={error || success ? `${passwordDescriptionId} ${messageId}` : passwordDescriptionId}
                 onChange={(event) => {
                   setNewPassword(event.target.value)
                   setError('')
@@ -191,19 +203,21 @@ function ChangePasswordField() {
                 )}
               </Button>
             </div>
-            <p className="text-muted-foreground text-xs">
+            <FieldDescription id={passwordDescriptionId} className="text-xs">
               At least 6 characters with uppercase letters, lowercase letters, and numbers.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+            </FieldDescription>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={confirmPasswordId}>Confirm Password</FieldLabel>
             <div className="relative">
               <Input
-                id="confirm-password"
+                id={confirmPasswordId}
+                name="confirmPassword"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 className="pr-12"
                 value={confirmPassword}
+                aria-describedby={error || success ? messageId : undefined}
                 onChange={(event) => {
                   setConfirmPassword(event.target.value)
                   setError('')
@@ -228,9 +242,13 @@ function ChangePasswordField() {
                 )}
               </Button>
             </div>
-          </div>
-          {error ? <p className="text-destructive text-sm">{error}</p> : null}
-          {success ? <p className="text-muted-foreground text-sm">{success}</p> : null}
+          </Field>
+          {error ? <FieldError id={messageId}>{error}</FieldError> : null}
+          {success ? (
+            <p id={messageId} role="status" className="text-muted-foreground text-sm">
+              {success}
+            </p>
+          ) : null}
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline" disabled={isSubmitting}>
@@ -301,6 +319,8 @@ function Deactivate({ user }: { user: TAuthUser }) {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const canSubmit = password.length > 0 && !isSubmitting && !!user
+  const passwordId = 'delete-account-password'
+  const errorId = 'delete-account-error'
 
   const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = async (event) => {
     event.preventDefault()
@@ -356,14 +376,17 @@ function Deactivate({ user }: { user: TAuthUser }) {
             </DialogDescription>
           </DialogHeader>
           <Field>
-            <FieldLabel htmlFor="password">Confirm Password</FieldLabel>
+            <FieldLabel htmlFor={passwordId}>Confirm Password</FieldLabel>
             <div className="relative">
               <Input
-                id="password"
+                id={passwordId}
+                name="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 className="pr-12"
                 value={password}
+                aria-describedby={error ? errorId : undefined}
+                aria-invalid={!!error}
                 onChange={(event) => {
                   setPassword(event.target.value)
                   setError('')
@@ -387,7 +410,7 @@ function Deactivate({ user }: { user: TAuthUser }) {
               </Button>
             </div>
           </Field>
-          {error ? <p className="text-destructive text-sm">{error}</p> : null}
+          {error ? <FieldError id={errorId}>{error}</FieldError> : null}
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline" disabled={isSubmitting}>

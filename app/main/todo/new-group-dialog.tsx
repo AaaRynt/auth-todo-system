@@ -3,6 +3,7 @@
 
 import { SquarePen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import type { ComponentProps } from 'react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import {
@@ -51,6 +52,10 @@ export function NewGroupDialog({
       toast.success('Group created', { position: 'top-center' })
     }
   }
+  const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = (event) => {
+    event.preventDefault()
+    save()
+  }
 
   return (
     <Dialog
@@ -72,29 +77,31 @@ export function NewGroupDialog({
           <DialogDescription>Create an empty todo group and open it in the sidebar.</DialogDescription>
         </DialogHeader>
 
-        <Field className="flex flex-1 flex-row!">
-          <FieldLabel htmlFor="new-group-name" className="flex-1 text-sm font-medium">
-            Name:
-          </FieldLabel>
-          <Input
-            id="new-group-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className="flex-3 px-4"
-            autoFocus
-          />
-        </Field>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <Field>
+            <FieldLabel htmlFor="new-group-name">Name</FieldLabel>
+            <Input
+              id="new-group-name"
+              name="groupName"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="px-4"
+              autoFocus
+              required
+            />
+          </Field>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" disabled={!name.trim()}>
+              Create group
             </Button>
-          </DialogClose>
-          <Button type="button" onClick={save} disabled={!name.trim()}>
-            Create group
-          </Button>
-        </DialogFooter>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

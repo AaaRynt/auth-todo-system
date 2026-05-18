@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
   Field,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
@@ -35,6 +36,7 @@ export function Login({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
   const canSubmit = username.trim().length > 0 && password.length > 0 && !isSubmitting
+  const errorId = 'login-form-error'
 
   const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = async (event) => {
     event.preventDefault()
@@ -87,6 +89,8 @@ export function Login({
                     autoComplete="username"
                     className="pl-12"
                     value={username}
+                    aria-describedby={error ? errorId : undefined}
+                    aria-invalid={!!error}
                     onChange={(event) => {
                       setUsername(event.target.value)
                       onUsernameChange(event.target.value)
@@ -116,6 +120,8 @@ export function Login({
                     autoComplete="current-password"
                     className="pr-12 pl-12"
                     value={password}
+                    aria-describedby={error ? errorId : undefined}
+                    aria-invalid={!!error}
                     onChange={(event) => {
                       setPassword(event.target.value)
                       setError('')
@@ -141,7 +147,11 @@ export function Login({
               </Field>
             </FieldGroup>
           </FieldSet>
-          {error ? <p className="text-destructive mt-4 text-sm">{error}</p> : null}
+          {error ? (
+            <FieldError id={errorId} className="mt-4">
+              {error}
+            </FieldError>
+          ) : null}
         </CardContent>
         <CardFooter>
           <FieldGroup>
