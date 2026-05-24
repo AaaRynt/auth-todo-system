@@ -34,6 +34,7 @@ export async function POST(request: Request) {
     user: {
       id: user.id,
       username: user.username,
+      nickname: user.nickname,
       createdAt: user.createdAt.toISOString(),
     },
   })

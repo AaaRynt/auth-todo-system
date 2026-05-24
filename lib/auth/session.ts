@@ -1,16 +1,11 @@
 // lib/auth/session.ts
 import { cookies } from 'next/headers'
 import { createHash, randomBytes } from 'node:crypto'
+import type { TSessionUser } from '@/app/data/type'
 import { prisma } from '@/lib/prisma'
 
 const sessionCookieName = 'auth-todo-session'
 const sessionExpiresInMs = 1000 * 60 * 60 * 24 * 30
-
-export type TSessionUser = {
-  id: string
-  username: string
-  createdAt: string
-}
 
 export async function createSession(userId: string) {
   const token = createSessionToken()
@@ -41,6 +36,7 @@ export async function getCurrentUser() {
         select: {
           id: true,
           username: true,
+          nickname: true,
           createdAt: true,
         },
       },
@@ -58,6 +54,7 @@ export async function getCurrentUser() {
   return {
     id: session.user.id,
     username: session.user.username,
+    nickname: session.user.nickname,
     createdAt: session.user.createdAt.toISOString(),
   } satisfies TSessionUser
 }

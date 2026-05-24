@@ -29,9 +29,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
       setUser(data?.user ?? null)
 
-      if (data?.user.username && window.sessionStorage.getItem('main-welcome-shown') !== 'true') {
+      if (data?.user.nickname && window.sessionStorage.getItem('main-welcome-shown') !== 'true') {
         window.sessionStorage.setItem('main-welcome-shown', 'true')
-        toast.info(`welcome,${data.user.username}`, { position: 'top-center' })
+        toast.info(`Welcome, ${data.user.nickname}`, { position: 'top-center' })
       }
     }
 
@@ -47,7 +47,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <div className="bg-background text-foreground relative flex min-h-dvh flex-1 flex-col">
         <Header />
         <main className="mt-14 flex min-h-0 w-full flex-1">
-          <Aside user={user} />
+          <Aside user={user} setUser={setUser} />
           <section className="relative flex flex-1 p-6">{children}</section>
         </main>
       </div>
@@ -66,7 +66,7 @@ function Header() {
   )
 }
 
-function Aside({ user }: { user: TAuthUser }) {
+function Aside({ user, setUser }: { user: TAuthUser; setUser: (user: TAuthUser) => void }) {
   const pathname = usePathname()
   const { todos, groups, search, setSearch, createGroup } = useTodoContext()
   const activeGroup = getActiveGroup(pathname)
@@ -140,7 +140,7 @@ function Aside({ user }: { user: TAuthUser }) {
         </div>
       </nav>
       <hr />
-      <Account user={user} />
+      <Account user={user} setUser={setUser} />
     </aside>
   )
 }

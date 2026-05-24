@@ -1,1 +1,10 @@
-rate limit，session 生命周期
+- modified: app/api/auth/account/route.ts
+- modified: app/api/auth/login/route.ts
+- modified: app/api/auth/register/route.ts
+- modified: app/data/type.ts
+- modified: app/main/layout.tsx
+- modified: components/features/account.tsx
+- modified: lib/auth/session.ts
+- modified: prisma/schema.prisma
+- lib/auth/profile.ts
+- prisma/migrations/20260519000000-add-user-nickname/

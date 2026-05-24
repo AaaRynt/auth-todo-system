@@ -1,9 +1,34 @@
-- 不要执行任何build命令
-- 文件/文件夹 —— 全部小写，多个单词用 kebab-case
-- 接口命名 —— xxxApi
-- 类型定义 —— 以大写 I 或 T 开头
-- 组件命名 —— 以大写字母开头，驼峰命名
-- api目录子文件夹需与app目录子文件夹对应
-- agent和用户封装的组件默认在`/components/features/`
-- 组件需要在`index.ts`使用Barrel File聚合导出
-- 文件的开头要有基于项目路径的绝对目录的注释，比如`// app/main/layout.tsx`
+- Do not run any build commands
+- Do not modify existing dependency versions in `package.json`
+- Do not add new dependencies unless the reason is explicitly explained
+- Do not automatically upgrade framework versions
+
+- Use lowercase kebab-case for all files and folders
+
+- API modules should use the `xxxApi` naming convention
+
+- Type definitions must start with `I` or `T`
+- Prefer `type` over `interface`
+- Only use `interface` when declaration merging is required
+
+- Components must use PascalCase naming
+
+- Subfolders inside `/api` must mirror the structure of `/app`
+
+- Agent/user-facing feature components should be placed under `/components/features/`
+
+- Components must be re-exported through `index.ts` Barrel Files
+
+- Do not use deep relative imports
+- Always use the `@/` alias for cross-directory imports
+
+- Every .js/.ts/.tsx file must start with an absolute project path comment. Example: `// app/main/layout.tsx`
+
+- Prefer local state over global state
+- Do not introduce global state unless necessary
+- Prefer Tailwind CSS v4 over plain CSS whenever possible
+
+- All async requests must handle:
+  - loading state
+  - error state
+  - empty state

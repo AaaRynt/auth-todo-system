@@ -1,9 +1,12 @@
 // app/data/type.ts
-export type TAuthUser = {
+export type TSessionUser = {
   id: string
   username: string
+  nickname: string
   createdAt: string
-} | null
+}
+export type TAuthUser = TSessionUser | null
+
 export type TGroup = {
   id: string
   name: string

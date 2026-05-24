@@ -1,5 +1,3 @@
--- prisma/migrations/20260512170000-init-auth/migration.sql
-
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 

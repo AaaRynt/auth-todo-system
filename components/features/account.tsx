@@ -5,6 +5,7 @@ import { Eye, EyeOff, LogOut, UserCircle, UserRoundKey, UserRoundX } from 'lucid
 import { useRouter } from 'next/navigation'
 import type { ComponentProps } from 'react'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import type { TAuthUser } from '@/app/data/type'
 import {
   Button,
@@ -19,6 +20,7 @@ import {
   Field,
   FieldDescription,
   FieldError,
+  FieldGroup,
   FieldLabel,
   Input,
   Popover,
@@ -26,8 +28,11 @@ import {
   PopoverTrigger,
   Spinner,
 } from '@/components/ui/'
+import { nicknameMaxLength } from '@/lib/auth/profile'
 
-export function Account({ user }: { user: TAuthUser }) {
+export function Account({ user, setUser }: { user: TAuthUser; setUser: (user: TAuthUser) => void }) {
+  const displayName = user?.nickname ?? user?.username ?? 'Account'
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -38,17 +43,131 @@ export function Account({ user }: { user: TAuthUser }) {
         >
           <UserCircle className="size-5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 text-left">
-            <div className="text-card-foreground truncate font-medium">{user?.username}</div>
+            <div className="text-card-foreground truncate font-medium">{displayName}</div>
             <div className="truncate text-xs">{user ? getUserAgeDays(user.createdAt) : ''}</div>
           </div>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-60">
+        <EditProfile user={user} setUser={setUser} />
         <ChangePasswordField />
         <Logout />
         <Deactivate user={user} />
       </PopoverContent>
     </Popover>
+  )
+}
+
+function EditProfile({ user, setUser }: { user: TAuthUser; setUser: (user: TAuthUser) => void }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [nickname, setNickname] = useState(user?.nickname ?? user?.username ?? '')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const nicknameId = 'profile-nickname'
+  const nicknameDescriptionId = 'profile-nickname-description'
+  const errorId = 'profile-error'
+  const currentNickname = user?.nickname ?? user?.username ?? ''
+  const trimmedNickname = nickname.trim()
+  const nicknameChanged = trimmedNickname !== currentNickname
+  const nicknameTooLong = trimmedNickname.length > nicknameMaxLength
+  const canSubmit = !!user && nicknameChanged && !!trimmedNickname && !nicknameTooLong && !isSubmitting
+
+  const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = async (event) => {
+    event.preventDefault()
+
+    if (!canSubmit) return
+
+    setError('')
+    setIsSubmitting(true)
+
+    const response = await fetch('/api/auth/account', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ nickname: trimmedNickname }),
+    })
+    const data = (await response.json().catch(() => null)) as { user?: NonNullable<TAuthUser>; message?: string } | null
+
+    if (!response.ok || !data?.user) {
+      setError(data?.message ?? 'Profile update failed.')
+      setIsSubmitting(false)
+      return
+    }
+
+    setUser(data.user)
+    toast.success(`Hello, ${data.user.nickname}`, { position: 'top-center' })
+    setIsSubmitting(false)
+    setIsOpen(false)
+  }
+
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open)
+
+        if (open) {
+          setNickname(user?.nickname ?? user?.username ?? '')
+        } else {
+          setError('')
+          setIsSubmitting(false)
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" disabled={!user}>
+          <UserCircle />
+          Edit profile
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Edit profile</DialogTitle>
+            <DialogDescription>Update the name shown in your account menu.</DialogDescription>
+          </DialogHeader>
+          {/* [todo]: Update the Avatar */}
+          <Field>
+            <FieldLabel htmlFor={nicknameId}>Nickname</FieldLabel>
+            <Input
+              type="text"
+              name="nickname"
+              id={nicknameId}
+              value={nickname}
+              maxLength={nicknameMaxLength}
+              aria-describedby={error ? `${nicknameDescriptionId} ${errorId}` : nicknameDescriptionId}
+              aria-invalid={!!error || nicknameTooLong}
+              onChange={(event) => {
+                setNickname(event.target.value)
+                setError('')
+              }}
+              required
+            />
+            <FieldDescription id={nicknameDescriptionId} className="text-xs">
+              1-{nicknameMaxLength} characters.
+            </FieldDescription>
+          </Field>
+          {error ? <FieldError id={errorId}>{error}</FieldError> : null}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={isSubmitting}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" disabled={!canSubmit}>
+              {isSubmitting ? (
+                <>
+                  <Spinner />
+                  Saving...
+                </>
+              ) : (
+                'Save'
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -131,118 +250,121 @@ function ChangePasswordField() {
         <form className="space-y-4" onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Change password</DialogTitle>
+            <DialogDescription>Choose a new password for this account.</DialogDescription>
           </DialogHeader>
-          <Field>
-            <FieldLabel htmlFor={currentPasswordId}>Current Password</FieldLabel>
-            <div className="relative">
-              <Input
-                id={currentPasswordId}
-                name="currentPassword"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                className="pr-12"
-                value={currentPassword}
-                aria-describedby={error || success ? messageId : undefined}
-                aria-invalid={!!error}
-                onChange={(event) => {
-                  setCurrentPassword(event.target.value)
-                  setError('')
-                  setSuccess('')
-                }}
-                required
-              />
-              <Button
-                type="button"
-                size="icon-xs"
-                variant="ghost"
-                className="text-muted-foreground absolute top-1/2 right-4 -translate-y-1/2!"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                aria-pressed={showPassword}
-                onClick={() => setShowPassword((visible) => !visible)}
-              >
-                {showPassword ? (
-                  <EyeOff aria-hidden="true" className="size-4" />
-                ) : (
-                  <Eye aria-hidden="true" className="size-4" />
-                )}
-              </Button>
-            </div>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={newPasswordId}>New Password</FieldLabel>
-            <div className="relative">
-              <Input
-                id={newPasswordId}
-                name="newPassword"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                className="pr-12"
-                value={newPassword}
-                aria-describedby={error || success ? `${passwordDescriptionId} ${messageId}` : passwordDescriptionId}
-                onChange={(event) => {
-                  setNewPassword(event.target.value)
-                  setError('')
-                  setSuccess('')
-                }}
-                aria-invalid={newPassword.length > 0 && !passwordMeetsPolicy}
-                required
-              />
-              <Button
-                type="button"
-                size="icon-xs"
-                variant="ghost"
-                className="text-muted-foreground absolute top-1/2 right-4 -translate-y-1/2!"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                aria-pressed={showPassword}
-                onClick={() => setShowPassword((visible) => !visible)}
-              >
-                {showPassword ? (
-                  <EyeOff aria-hidden="true" className="size-4" />
-                ) : (
-                  <Eye aria-hidden="true" className="size-4" />
-                )}
-              </Button>
-            </div>
-            <FieldDescription id={passwordDescriptionId} className="text-xs">
-              At least 6 characters with uppercase letters, lowercase letters, and numbers.
-            </FieldDescription>
-          </Field>
-          <Field>
-            <FieldLabel htmlFor={confirmPasswordId}>Confirm Password</FieldLabel>
-            <div className="relative">
-              <Input
-                id={confirmPasswordId}
-                name="confirmPassword"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                className="pr-12"
-                value={confirmPassword}
-                aria-describedby={error || success ? messageId : undefined}
-                onChange={(event) => {
-                  setConfirmPassword(event.target.value)
-                  setError('')
-                  setSuccess('')
-                }}
-                aria-invalid={newPassword.length > 0 && confirmPassword.length > 0 && newPassword !== confirmPassword}
-                required
-              />
-              <Button
-                type="button"
-                size="icon-xs"
-                variant="ghost"
-                className="text-muted-foreground absolute top-1/2 right-4 -translate-y-1/2!"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                aria-pressed={showPassword}
-                onClick={() => setShowPassword((visible) => !visible)}
-              >
-                {showPassword ? (
-                  <EyeOff aria-hidden="true" className="size-4" />
-                ) : (
-                  <Eye aria-hidden="true" className="size-4" />
-                )}
-              </Button>
-            </div>
-          </Field>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor={currentPasswordId}>Current Password</FieldLabel>
+              <div className="relative">
+                <Input
+                  id={currentPasswordId}
+                  name="currentPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  className="pr-12"
+                  value={currentPassword}
+                  aria-describedby={error || success ? messageId : undefined}
+                  aria-invalid={!!error}
+                  onChange={(event) => {
+                    setCurrentPassword(event.target.value)
+                    setError('')
+                    setSuccess('')
+                  }}
+                  required
+                />
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  className="text-muted-foreground absolute top-1/2 right-4 -translate-y-1/2!"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? (
+                    <EyeOff aria-hidden="true" className="size-4" />
+                  ) : (
+                    <Eye aria-hidden="true" className="size-4" />
+                  )}
+                </Button>
+              </div>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor={newPasswordId}>New Password</FieldLabel>
+              <div className="relative">
+                <Input
+                  id={newPasswordId}
+                  name="newPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  className="pr-12"
+                  value={newPassword}
+                  aria-describedby={error || success ? `${passwordDescriptionId} ${messageId}` : passwordDescriptionId}
+                  onChange={(event) => {
+                    setNewPassword(event.target.value)
+                    setError('')
+                    setSuccess('')
+                  }}
+                  aria-invalid={newPassword.length > 0 && !passwordMeetsPolicy}
+                  required
+                />
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  className="text-muted-foreground absolute top-1/2 right-4 -translate-y-1/2!"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? (
+                    <EyeOff aria-hidden="true" className="size-4" />
+                  ) : (
+                    <Eye aria-hidden="true" className="size-4" />
+                  )}
+                </Button>
+              </div>
+              <FieldDescription id={passwordDescriptionId} className="text-xs">
+                At least 6 characters with uppercase letters, lowercase letters, and numbers.
+              </FieldDescription>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor={confirmPasswordId}>Confirm Password</FieldLabel>
+              <div className="relative">
+                <Input
+                  id={confirmPasswordId}
+                  name="confirmPassword"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  className="pr-12"
+                  value={confirmPassword}
+                  aria-describedby={error || success ? messageId : undefined}
+                  onChange={(event) => {
+                    setConfirmPassword(event.target.value)
+                    setError('')
+                    setSuccess('')
+                  }}
+                  aria-invalid={newPassword.length > 0 && confirmPassword.length > 0 && newPassword !== confirmPassword}
+                  required
+                />
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  className="text-muted-foreground absolute top-1/2 right-4 -translate-y-1/2!"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  {showPassword ? (
+                    <EyeOff aria-hidden="true" className="size-4" />
+                  ) : (
+                    <Eye aria-hidden="true" className="size-4" />
+                  )}
+                </Button>
+              </div>
+            </Field>
+          </FieldGroup>
           {error ? <FieldError id={messageId}>{error}</FieldError> : null}
           {success ? (
             <p id={messageId} role="status" className="text-muted-foreground text-sm">
