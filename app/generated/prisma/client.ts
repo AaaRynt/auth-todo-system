@@ -51,3 +51,13 @@ export type User = Prisma.UserModel
  * 
  */
 export type Session = Prisma.SessionModel
+/**
+ * Model Group
+ * 
+ */
+export type Group = Prisma.GroupModel
+/**
+ * Model Todo
+ * 
+ */
+export type Todo = Prisma.TodoModel

@@ -1,10 +1,7 @@
-- modified: app/api/auth/account/route.ts
-- modified: app/api/auth/login/route.ts
-- modified: app/api/auth/register/route.ts
-- modified: app/data/type.ts
-- modified: app/main/layout.tsx
-- modified: components/features/account.tsx
-- modified: lib/auth/session.ts
-- modified: prisma/schema.prisma
-- lib/auth/profile.ts
-- prisma/migrations/20260519000000-add-user-nickname/
+1. 确认 schema
+2. 跑 prisma format / validate
+3. 跑 migration
+4. 写 GET / POST groups
+5. 写 GET / POST todos
+6. 先用 Network 或 curl 验证
+7. 再改 TodoProvider

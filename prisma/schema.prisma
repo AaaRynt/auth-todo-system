@@ -21,6 +21,8 @@ model User {
   updatedAt    DateTime @updatedAt
 
   sessions Session[]
+  groups   Group[]
+  todos    Todo[]
 }
 
 model Session {
@@ -30,5 +32,35 @@ model Session {
   createdAt DateTime @default(now())
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Group {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  todos Todo[]
+
+  @@unique([id, userId])
+  @@unique([userId, name])
+}
+
+model Todo {
+  id        String   @id @default(uuid())
+  title     String
+  completed Boolean  @default(false)
+  priority  String   @default("normal")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  groupId String
+  group   Group  @relation(fields: [groupId, userId], references: [id, userId], onDelete: Cascade)
 }

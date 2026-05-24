@@ -10,4 +10,6 @@
  */
 export type * from './models/User'
 export type * from './models/Session'
+export type * from './models/Group'
+export type * from './models/Todo'
 export type * from './commonInputTypes'
