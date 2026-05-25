@@ -19,8 +19,10 @@ import {
   DialogTitle,
   DialogTrigger,
   Field,
+  FieldError,
   FieldLabel,
   Input,
+  Spinner,
 } from '@/components/ui/'
 
 export function TodoEditDialog({
@@ -30,12 +32,14 @@ export function TodoEditDialog({
 }: {
   todo: Ttodo
   groups: string[]
-  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => void
+  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => Promise<void>
 }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(todo.title)
   const [group, setGroup] = useState(todo.group)
   const [priority, setPriority] = useState<Tpriority>(todo.priority)
+  const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
   const formId = useId()
   const titleId = `${formId}-title`
   const groupId = `${formId}-group`
@@ -55,20 +59,26 @@ export function TodoEditDialog({
     setPriority(todo.priority)
   }
 
-  const save = () => {
-    if (!title.trim()) return
-
-    onUpdate(todo.id, {
-      title,
-      group,
-      priority,
-    })
-    setOpen(false)
-    toast.success('Todo updated', { position: 'top-center' })
-  }
-  const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = (event) => {
+  const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = async (event) => {
     event.preventDefault()
-    save()
+    if (!title.trim() || isSaving) return
+
+    setError('')
+    setIsSaving(true)
+
+    try {
+      await onUpdate(todo.id, {
+        title,
+        group,
+        priority,
+      })
+      setOpen(false)
+      toast.success('Todo updated', { position: 'top-center' })
+    } catch (nextError) {
+      setError(nextError instanceof Error ? nextError.message : 'Unable to update todo.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -76,6 +86,7 @@ export function TodoEditDialog({
       open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) resetDraft()
+        if (!nextOpen) setError('')
         setOpen(nextOpen)
       }}
     >
@@ -99,8 +110,10 @@ export function TodoEditDialog({
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               className="px-4 text-4xl font-semibold"
+              maxLength={200}
               autoFocus
               required
+              disabled={isSaving}
             />
           </Field>
 
@@ -130,14 +143,17 @@ export function TodoEditDialog({
             </Field>
           </div>
 
+          {error ? <FieldError>{error}</FieldError> : null}
+
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" disabled={isSaving}>
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={!title.trim()}>
-              Save changes
+            <Button type="submit" disabled={isSaving || !title.trim()}>
+              {isSaving ? <Spinner /> : null}
+              {isSaving ? 'Saving...' : 'Save changes'}
             </Button>
           </DialogFooter>
         </form>

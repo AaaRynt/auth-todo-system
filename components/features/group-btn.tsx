@@ -1,4 +1,4 @@
-// components/features/group.tsx
+// components/features/group-btn.tsx
 'use client'
 
 import { RiGithubFill } from '@remixicon/react'
@@ -6,7 +6,7 @@ import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/components/theme-provider'
 import { Button, ButtonGroup } from '@/components/ui/'
 
-export function Group() {
+export function GroupBtn() {
   return (
     <ButtonGroup className="hidden sm:flex">
       <ThemeToggle />

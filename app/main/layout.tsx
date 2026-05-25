@@ -4,13 +4,14 @@
 import { Folder, ListChecks, Search } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { defaultGroup } from '@/app/data/const'
 import type { TAuthUser } from '@/app/data/type'
 import { NewGroupDialog } from '@/app/main/todo/new-group-dialog'
 import { TodoProvider, useTodoContext } from '@/app/main/todo/todo-provider'
-import { Account, Group, GroupEdit } from '@/components/features/'
-import { Input, buttonVariants } from '@/components/ui/'
+import { Account, GroupBtn, GroupEdit } from '@/components/features/'
+import { Button, Input, Spinner, buttonVariants } from '@/components/ui/'
 import { cn } from '@/lib/utils'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -61,23 +62,16 @@ function Header() {
       <Link href="/main/all" className="text-sm font-medium">
         Auth Todo
       </Link>
-      <Group />
+      <GroupBtn />
     </header>
   )
 }
 
 function Aside({ user, setUser }: { user: TAuthUser; setUser: (user: TAuthUser) => void }) {
   const pathname = usePathname()
-  const { todos, groups, search, setSearch, createGroup } = useTodoContext()
+  const { groups, search, isLoading, loadError, setSearch, reload, createGroup, renameGroup, deleteGroup } =
+    useTodoContext()
   const activeGroup = getActiveGroup(pathname)
-  const groupTodoCounts = useMemo(
-    () =>
-      todos.reduce<Record<string, number>>((counts, todo) => {
-        counts[todo.group] = (counts[todo.group] ?? 0) + 1
-        return counts
-      }, {}),
-    [todos],
-  )
 
   return (
     <aside className="bg-card/50 sticky top-14 flex h-[calc(100dvh-3.5rem)] w-64 shrink-0 flex-col border-r px-2 py-3">
@@ -112,30 +106,45 @@ function Aside({ user, setUser }: { user: TAuthUser; setUser: (user: TAuthUser) 
         <div className="flex min-h-0 flex-1 flex-col gap-2">
           <div className="text-muted-foreground px-3 text-xs font-medium tracking-wide uppercase">Groups</div>
           <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-            {groups.map((group) => {
-              const active = activeGroup === group
+            {isLoading ? (
+              <div className="text-muted-foreground flex items-center gap-2 px-3 py-2 text-sm">
+                <Spinner />
+                Loading...
+              </div>
+            ) : loadError ? (
+              <div className="flex flex-col gap-2 px-3 py-2">
+                <p className="text-destructive text-xs">{loadError}</p>
+                <Button type="button" size="sm" variant="outline" onClick={() => void reload()}>
+                  Retry
+                </Button>
+              </div>
+            ) : (
+              groups.map((group) => {
+                const active = activeGroup === group.name
 
-              return (
-                <Link
-                  key={group}
-                  href={`/main/group/${encodeURIComponent(group)}`}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    buttonVariants({ variant: active ? 'secondary' : 'ghost', size: 'sm' }),
-                    'text-card-foreground w-full justify-between',
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="text-muted-foreground absolute flex w-4 translate-x-0.5 items-center justify-center text-[0.5rem]">
-                      {groupTodoCounts[group] ?? 0}
-                    </div>
-                    <Folder className="size-5" aria-hidden="true" />
-                    <span className="truncate">{group}</span>
+                return (
+                  <div key={group.id} className="flex items-center gap-1">
+                    <Link
+                      href={`/main/group/${encodeURIComponent(group.name)}`}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        buttonVariants({ variant: active ? 'secondary' : 'ghost', size: 'sm' }),
+                        'text-card-foreground min-w-0 flex-1 justify-start gap-2',
+                      )}
+                    >
+                      <div className="text-muted-foreground absolute flex w-4 translate-x-0.5 items-center justify-center text-[0.5rem]">
+                        {group.todoCount}
+                      </div>
+                      <Folder className="size-5" aria-hidden="true" />
+                      <span className="truncate">{group.name}</span>
+                    </Link>
+                    {group.name.toLowerCase() !== defaultGroup.toLowerCase() ? (
+                      <GroupEdit group={group} isActive={active} onRename={renameGroup} onDelete={deleteGroup} />
+                    ) : null}
                   </div>
-                  <GroupEdit />
-                </Link>
-              )
-            })}
+                )
+              })
+            )}
           </div>
         </div>
       </nav>

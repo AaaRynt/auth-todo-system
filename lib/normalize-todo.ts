@@ -9,9 +9,11 @@ export function normalizeTodo(todo: Partial<Ttodo>): Ttodo {
   return {
     id: todo.id ?? crypto.randomUUID(),
     title: todo.title ?? 'Untitled task',
+    groupId: todo.groupId ?? '',
     group: todo.group?.trim() || defaultGroup,
     priority: normalizePriority(todo.priority),
     completed: todo.completed ?? false,
     createdAt: todo.createdAt ?? Date.now(),
+    updatedAt: todo.updatedAt ?? new Date().toISOString(),
   }
 }

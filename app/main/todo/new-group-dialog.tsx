@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { ComponentProps } from 'react'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import type { TGroup } from '@/app/data/type'
 import {
   Button,
   Dialog,
@@ -19,42 +20,54 @@ import {
   Field,
   FieldLabel,
   Input,
+  Spinner,
 } from '@/components/ui/'
 
 export function NewGroupDialog({
   groups,
   onCreateGroup,
 }: {
-  groups: string[]
-  onCreateGroup: (group: string) => string | null
+  groups: TGroup[]
+  onCreateGroup: (group: string) => Promise<TGroup>
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
 
-  const save = () => {
+  const save = async () => {
     const nextName = name.trim()
 
     if (!nextName) return
 
-    const existed = groups.some((group) => group.toLowerCase() === nextName.toLowerCase())
-    const createdGroup = onCreateGroup(nextName)
+    const existingGroup = groups.find((group) => group.name.toLowerCase() === nextName.toLowerCase())
 
-    if (!createdGroup) return
-
-    setName('')
-    setOpen(false)
-    router.push(`/main/group/${encodeURIComponent(createdGroup)}`)
-
-    if (existed) {
+    if (existingGroup) {
+      setName('')
+      setOpen(false)
+      router.push(`/main/group/${encodeURIComponent(existingGroup.name)}`)
       toast.info('Group already exists', { position: 'top-center' })
-    } else {
+      return
+    }
+
+    setIsCreating(true)
+
+    try {
+      const createdGroup = await onCreateGroup(nextName)
+
+      setName('')
+      setOpen(false)
+      router.push(`/main/group/${encodeURIComponent(createdGroup.name)}`)
       toast.success('Group created', { position: 'top-center' })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to create group.', { position: 'top-center' })
+    } finally {
+      setIsCreating(false)
     }
   }
-  const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = (event) => {
+  const handleSubmit: NonNullable<ComponentProps<'form'>['onSubmit']> = async (event) => {
     event.preventDefault()
-    save()
+    await save()
   }
 
   return (
@@ -62,6 +75,7 @@ export function NewGroupDialog({
       open={open}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) setName('')
+        if (!nextOpen) setIsCreating(false)
         setOpen(nextOpen)
       }}
     >
@@ -86,19 +100,22 @@ export function NewGroupDialog({
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="px-4"
+              maxLength={50}
               autoFocus
               required
+              disabled={isCreating}
             />
           </Field>
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" disabled={isCreating}>
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={!name.trim()}>
-              Create group
+            <Button type="submit" disabled={isCreating || !name.trim()}>
+              {isCreating ? <Spinner /> : null}
+              {isCreating ? 'Creating...' : 'Create group'}
             </Button>
           </DialogFooter>
         </form>

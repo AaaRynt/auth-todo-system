@@ -1,5 +1,10 @@
 // app/main/todo/todo-item.tsx
+// app/main/todo/todo-item.tsx
+'use client'
+
 import { CalendarClock, Flag } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { priorityOptions } from '@/app/data/const'
 import { Ttodo } from '@/app/data/type'
 import { DeleteTodoPopover } from '@/app/main/todo/delete-todo-popover'
@@ -16,10 +21,11 @@ export function TodoItem({
 }: {
   todo: Ttodo
   groups: string[]
-  onToggle: (id: string, completed: boolean) => void
-  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => void
-  onDelete: (id: string) => void
+  onToggle: (id: string, completed: boolean) => Promise<void>
+  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => Promise<void>
+  onDelete: (id: string) => Promise<void>
 }) {
+  const [isToggling, setIsToggling] = useState(false)
   const priority = priorityOptions.find((option) => option.value === todo.priority) ?? priorityOptions[1]
   const formatCreatedAt = (timestamp: number) => {
     const date = new Date(timestamp)
@@ -31,13 +37,26 @@ export function TodoItem({
 
     return `${M}/${D} ${ddd}, ${HH}:${mm}`
   }
+  const toggle = async (completed: boolean) => {
+    setIsToggling(true)
+
+    try {
+      await onToggle(todo.id, completed)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update todo.', { position: 'top-center' })
+    } finally {
+      setIsToggling(false)
+    }
+  }
+
   return (
     <Item className={cn('bg-card relative items-center overflow-visible py-2', todo.completed && 'bg-muted/50')}>
       {!todo.completed && <div className="bg-primary/80 absolute -top-1 -right-1 size-3 rounded-full"></div>}
       <div className="flex flex-1 flex-row items-center gap-4">
         <Checkbox
           checked={todo.completed}
-          onCheckedChange={(checked) => onToggle(todo.id, checked === true)}
+          disabled={isToggling}
+          onCheckedChange={(checked) => void toggle(checked === true)}
           aria-label={`Mark ${todo.title} as ${todo.completed ? 'active' : 'completed'}`}
         />
         <ItemContent className="flex flex-row justify-between">

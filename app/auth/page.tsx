@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Group } from '@/components/features/'
+import { GroupBtn } from '@/components/features/'
 import { Login } from './login'
 import { Other } from './other'
 import { Signup } from './signup'
@@ -15,7 +15,7 @@ export default function Auth() {
   return (
     <main className="bg-background text-foreground flex min-h-dvh flex-1 flex-col items-center justify-center gap-8 sm:flex-row sm:justify-evenly sm:px-8">
       <div className="absolute top-1/100 right-1/100">
-        <Group />
+        <GroupBtn />
       </div>
       <Other username={activeUsername} />
       {isLogin ? (

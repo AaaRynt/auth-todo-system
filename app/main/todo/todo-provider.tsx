@@ -3,172 +3,285 @@
 
 import type * as React from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { defaultGroup } from '@/app/data/const'
-import type { Ttodo } from '@/app/data/type'
+import type { TGroup, Ttodo } from '@/app/data/type'
 import { normalizeTodo } from '@/lib/normalize-todo'
-
-const todosStorageKey = 'todos'
-const groupsStorageKey = 'todo-groups'
 
 type TtodoDraft = Pick<Ttodo, 'title' | 'group' | 'priority'>
 type TtodoUpdates = Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>
 
+type TTodosResponse = {
+  todos: Ttodo[]
+  message?: string
+}
+
+type TTodoResponse = {
+  todo: Ttodo
+  groups: TGroup[]
+  message?: string
+}
+
+type TGroupsResponse = {
+  groups: TGroup[]
+  message?: string
+}
+
+type TGroupResponse = {
+  group: TGroup
+  message?: string
+}
+
+type TDeleteGroupResponse = {
+  destinationGroup: TGroup
+  movedTodoCount: number
+  message?: string
+}
+
+type TDeleteTodoResponse = {
+  ok: boolean
+  groups: TGroup[]
+  message?: string
+}
+
 type TtodoContextValue = {
   todos: Ttodo[]
-  groups: string[]
+  groups: TGroup[]
   search: string
-  hydrated: boolean
+  isLoading: boolean
+  loadError: string
   setSearch: (search: string) => void
-  createGroup: (group: string) => string | null
-  addTodo: (todo: TtodoDraft) => boolean
-  toggleTodo: (id: string, completed: boolean) => void
-  updateTodo: (id: string, updates: TtodoUpdates) => void
-  deleteTodo: (id: string) => void
-  clearCompleted: (group?: string) => void
+  reload: () => Promise<void>
+  createGroup: (name: string) => Promise<TGroup>
+  renameGroup: (id: string, name: string) => Promise<TGroup>
+  deleteGroup: (id: string) => Promise<number>
+  addTodo: (todo: TtodoDraft) => Promise<Ttodo | null>
+  toggleTodo: (id: string, completed: boolean) => Promise<void>
+  updateTodo: (id: string, updates: TtodoUpdates) => Promise<void>
+  deleteTodo: (id: string) => Promise<void>
+  clearCompleted: (group?: string) => Promise<void>
 }
 
 const TodoContext = createContext<TtodoContextValue | null>(null)
 
 export function TodoProvider({ children }: { children: React.ReactNode }) {
   const [todos, setTodos] = useState<Ttodo[]>([])
-  const [savedGroups, setSavedGroups] = useState<string[]>([])
+  const [groups, setGroups] = useState<TGroup[]>([])
   const [search, setSearch] = useState('')
-  const [hydrated, setHydrated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      const storedTodos = parseStorageValue<Partial<Ttodo>[]>(todosStorageKey, [])
-      const storedGroups = parseStorageValue<string[]>(groupsStorageKey, [])
+  const reload = useCallback(async () => {
+    setIsLoading(true)
+    setLoadError('')
 
-      setTodos(Array.isArray(storedTodos) ? storedTodos.map(normalizeTodo) : [])
-      setSavedGroups(Array.isArray(storedGroups) ? normalizeGroupList(storedGroups) : [])
-      setHydrated(true)
-    })
-
-    return () => window.cancelAnimationFrame(frame)
-  }, [])
-
-  useEffect(() => {
-    if (!hydrated) return
-
-    window.localStorage.setItem(todosStorageKey, JSON.stringify(todos))
-  }, [hydrated, todos])
-
-  useEffect(() => {
-    if (!hydrated) return
-
-    window.localStorage.setItem(groupsStorageKey, JSON.stringify(savedGroups))
-  }, [hydrated, savedGroups])
-
-  const groups = useMemo(() => {
-    const todoGroups = todos.map((todo) => todo.group)
-
-    return normalizeGroupList([defaultGroup, ...savedGroups, ...todoGroups])
-  }, [savedGroups, todos])
-
-  const rememberGroup = useCallback((group: string) => {
-    const nextGroup = normalizeGroupName(group)
-
-    setSavedGroups((currentGroups) => normalizeGroupList([...currentGroups, nextGroup]))
-
-    return nextGroup
-  }, [])
-
-  const createGroup = useCallback(
-    (group: string) => {
-      const nextGroup = group.trim()
-
-      if (!nextGroup) return null
-
-      const existingGroup = groups.find((groupName) => groupName.toLowerCase() === nextGroup.toLowerCase())
-
-      if (existingGroup) return existingGroup
-
-      return rememberGroup(nextGroup)
-    },
-    [groups, rememberGroup],
-  )
-
-  const addTodo = useCallback(
-    (todo: TtodoDraft) => {
-      const nextTitle = todo.title.trim()
-
-      if (!nextTitle) return false
-
-      const nextGroup = rememberGroup(todo.group)
-
-      setTodos((currentTodos) => [
-        {
-          id: crypto.randomUUID(),
-          title: nextTitle,
-          group: nextGroup,
-          priority: todo.priority,
-          completed: false,
-          createdAt: Date.now(),
-        },
-        ...currentTodos,
+    try {
+      const [todoData, groupData] = await Promise.all([
+        requestJson<TTodosResponse>('/api/todos'),
+        requestJson<TGroupsResponse>('/api/groups'),
       ])
 
-      return true
-    },
-    [rememberGroup],
-  )
-
-  const toggleTodo = useCallback((id: string, completed: boolean) => {
-    setTodos((currentTodos) => currentTodos.map((todo) => (todo.id === id ? { ...todo, completed } : todo)))
+      setTodos(todoData.todos.map(normalizeTodo))
+      setGroups(sortGroups(groupData.groups))
+    } catch (error) {
+      setLoadError(getErrorMessage(error, 'Unable to load todos.'))
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
-  const updateTodo = useCallback(
-    (id: string, updates: TtodoUpdates) => {
-      const nextGroup = updates.group === undefined ? undefined : rememberGroup(updates.group)
+  useEffect(() => {
+    let cancelled = false
 
-      setTodos((currentTodos) =>
-        currentTodos.map((todo) =>
-          todo.id === id && !todo.completed
-            ? {
-                ...todo,
-                ...updates,
-                title: updates.title?.trim() || todo.title,
-                group: (nextGroup ?? todo.group) || defaultGroup,
-                priority: updates.priority ?? todo.priority,
-              }
-            : todo,
-        ),
-      )
-    },
-    [rememberGroup],
-  )
+    async function loadInitialData() {
+      try {
+        const [todoData, groupData] = await Promise.all([
+          requestJson<TTodosResponse>('/api/todos'),
+          requestJson<TGroupsResponse>('/api/groups'),
+        ])
 
-  const deleteTodo = useCallback((id: string) => {
-    setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== id))
+        if (cancelled) return
+
+        setTodos(todoData.todos.map(normalizeTodo))
+        setGroups(sortGroups(groupData.groups))
+      } catch (error) {
+        if (!cancelled) {
+          setLoadError(getErrorMessage(error, 'Unable to load todos.'))
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadInitialData()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  const clearCompleted = useCallback((group?: string) => {
+  const createGroup = useCallback(async (name: string) => {
+    const data = await requestJson<TGroupResponse>('/api/groups', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+    })
+
+    setGroups((currentGroups) => mergeGroup(currentGroups, data.group))
+
+    return data.group
+  }, [])
+
+  const renameGroup = useCallback(async (id: string, name: string) => {
+    const data = await requestJson<TGroupResponse>(`/api/groups/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name }),
+    })
+
+    setGroups((currentGroups) => mergeGroup(currentGroups, data.group))
     setTodos((currentTodos) =>
-      currentTodos.filter((todo) => {
-        if (!todo.completed) return true
-        if (!group) return false
-
-        return todo.group !== group
-      }),
+      currentTodos.map((todo) => (todo.groupId === data.group.id ? { ...todo, group: data.group.name } : todo)),
     )
+
+    return data.group
   }, [])
+
+  const deleteGroup = useCallback(async (id: string) => {
+    const data = await requestJson<TDeleteGroupResponse>(`/api/groups/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    })
+
+    setGroups((currentGroups) =>
+      mergeGroup(
+        currentGroups.filter((group) => group.id !== id),
+        data.destinationGroup,
+      ),
+    )
+    setTodos((currentTodos) =>
+      currentTodos.map((todo) =>
+        todo.groupId === id
+          ? {
+              ...todo,
+              groupId: data.destinationGroup.id,
+              group: data.destinationGroup.name,
+            }
+          : todo,
+      ),
+    )
+
+    return data.movedTodoCount
+  }, [])
+
+  const addTodo = useCallback(async (todo: TtodoDraft) => {
+    const title = todo.title.trim()
+
+    if (!title) return null
+
+    const data = await requestJson<TTodoResponse>('/api/todos', {
+      method: 'POST',
+      body: JSON.stringify({
+        title,
+        group: todo.group,
+        priority: todo.priority,
+      }),
+    })
+    const createdTodo = normalizeTodo(data.todo)
+
+    setTodos((currentTodos) => [createdTodo, ...currentTodos])
+    setGroups(sortGroups(data.groups))
+
+    return createdTodo
+  }, [])
+
+  const toggleTodo = useCallback(async (id: string, completed: boolean) => {
+    const data = await requestJson<TTodoResponse>(`/api/todos/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ completed }),
+    })
+
+    setTodos((currentTodos) => currentTodos.map((todo) => (todo.id === data.todo.id ? normalizeTodo(data.todo) : todo)))
+    setGroups(sortGroups(data.groups))
+  }, [])
+
+  const updateTodo = useCallback(async (id: string, updates: TtodoUpdates) => {
+    const data = await requestJson<TTodoResponse>(`/api/todos/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    })
+    const updatedTodo = normalizeTodo(data.todo)
+
+    setTodos((currentTodos) => currentTodos.map((todo) => (todo.id === updatedTodo.id ? updatedTodo : todo)))
+    setGroups(sortGroups(data.groups))
+  }, [])
+
+  const deleteTodo = useCallback(async (id: string) => {
+    const data = await requestJson<TDeleteTodoResponse>(`/api/todos/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    })
+
+    setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== id))
+    setGroups(sortGroups(data.groups))
+  }, [])
+
+  const clearCompleted = useCallback(
+    async (group?: string) => {
+      const completedTodos = todos.filter((todo) => todo.completed && (!group || todo.group === group))
+
+      try {
+        await Promise.all(
+          completedTodos.map((todo) =>
+            requestJson<TDeleteTodoResponse>(`/api/todos/${encodeURIComponent(todo.id)}`, {
+              method: 'DELETE',
+            }),
+          ),
+        )
+
+        const deletedIds = new Set(completedTodos.map((todo) => todo.id))
+        const groupData = await requestJson<TGroupsResponse>('/api/groups')
+
+        setTodos((currentTodos) => currentTodos.filter((todo) => !deletedIds.has(todo.id)))
+        setGroups(sortGroups(groupData.groups))
+      } catch (error) {
+        await reload()
+        throw error
+      }
+    },
+    [reload, todos],
+  )
 
   const value = useMemo<TtodoContextValue>(
     () => ({
       todos,
       groups,
       search,
-      hydrated,
+      isLoading,
+      loadError,
       setSearch,
+      reload,
       createGroup,
+      renameGroup,
+      deleteGroup,
       addTodo,
       toggleTodo,
       updateTodo,
       deleteTodo,
       clearCompleted,
     }),
-    [addTodo, clearCompleted, createGroup, deleteTodo, groups, hydrated, search, toggleTodo, todos, updateTodo],
+    [
+      addTodo,
+      clearCompleted,
+      createGroup,
+      deleteGroup,
+      deleteTodo,
+      groups,
+      isLoading,
+      loadError,
+      reload,
+      renameGroup,
+      search,
+      toggleTodo,
+      todos,
+      updateTodo,
+    ],
   )
 
   return <TodoContext.Provider value={value}>{children}</TodoContext.Provider>
@@ -184,32 +297,33 @@ export function useTodoContext() {
   return context
 }
 
-function parseStorageValue<Tvalue>(key: string, fallback: Tvalue): Tvalue {
-  try {
-    return JSON.parse(window.localStorage.getItem(key) || JSON.stringify(fallback)) as Tvalue
-  } catch {
-    return fallback
-  }
-}
+async function requestJson<Tdata extends { message?: string }>(path: string, init?: RequestInit) {
+  const response = await fetch(path, {
+    ...init,
+    headers: init?.body ? { 'Content-Type': 'application/json', ...init.headers } : init?.headers,
+    credentials: 'same-origin',
+  })
+  const data = (await response.json().catch(() => null)) as Tdata | null
 
-function normalizeGroupName(group: string) {
-  return group.trim() || defaultGroup
-}
-
-function normalizeGroupList(groups: string[]) {
-  const uniqueGroups = new Map<string, string>()
-
-  for (const group of groups) {
-    const nextGroup = group.trim()
-
-    if (!nextGroup) continue
-
-    const key = nextGroup.toLowerCase()
-
-    if (!uniqueGroups.has(key)) {
-      uniqueGroups.set(key, nextGroup)
-    }
+  if (!response.ok) {
+    throw new Error(data?.message ?? 'Request failed.')
   }
 
-  return Array.from(uniqueGroups.values()).sort((firstGroup, secondGroup) => firstGroup.localeCompare(secondGroup))
+  if (!data) {
+    throw new Error('Invalid server response.')
+  }
+
+  return data
+}
+
+function mergeGroup(groups: TGroup[], nextGroup: TGroup) {
+  return sortGroups([...groups.filter((group) => group.id !== nextGroup.id), nextGroup])
+}
+
+function sortGroups(groups: TGroup[]) {
+  return groups.sort((firstGroup, secondGroup) => firstGroup.name.localeCompare(secondGroup.name))
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback
 }

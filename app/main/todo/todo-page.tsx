@@ -23,25 +23,41 @@ import {
   Field,
   FieldLabel,
   Input,
+  Spinner,
 } from '@/components/ui'
 
 export function TodoPage({ groupName }: { groupName?: string }) {
-  const { todos, groups, search, addTodo, toggleTodo, updateTodo, deleteTodo, clearCompleted } = useTodoContext()
+  const {
+    todos,
+    groups,
+    search,
+    isLoading,
+    loadError,
+    reload,
+    addTodo,
+    toggleTodo,
+    updateTodo,
+    deleteTodo,
+    clearCompleted,
+  } = useTodoContext()
   const [title, setTitle] = useState('')
   const [group, setGroup] = useState(groupName || defaultGroup)
   const [priority, setPriority] = useState<Tpriority>(defaultPriority)
   const [filter, setFilter] = useState<Tfilter>('all')
+  const [isCreating, setIsCreating] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
   const scopeTitle = groupName || 'All Tasks'
+  const groupNames = useMemo(() => groups.map((item) => item.name), [groups])
 
   const groupOptions = useMemo(
     () =>
-      Array.from(new Set([groupName, group, ...groups].filter(Boolean) as string[]))
+      Array.from(new Set([groupName, group, ...groupNames].filter(Boolean) as string[]))
         .sort((firstGroup, secondGroup) => firstGroup.localeCompare(secondGroup))
         .map((groupName) => ({
           value: groupName,
           label: groupName,
         })),
-    [group, groupName, groups],
+    [group, groupName, groupNames],
   )
   const scopedTodos = useMemo(() => {
     if (!groupName) return todos
@@ -72,29 +88,47 @@ export function TodoPage({ groupName }: { groupName?: string }) {
     return result
   }, {})
 
-  const submitTodo: NonNullable<ComponentProps<'form'>['onSubmit']> = (event) => {
+  const submitTodo: NonNullable<ComponentProps<'form'>['onSubmit']> = async (event) => {
     event.preventDefault()
 
-    const created = addTodo({
-      title,
-      group,
-      priority,
-    })
+    if (isCreating) return
 
-    if (!created) return
+    setIsCreating(true)
 
-    setTitle('')
-    toast.success('Todo created', { position: 'top-center' })
+    try {
+      const created = await addTodo({
+        title,
+        group: groupName || group,
+        priority,
+      })
+
+      if (!created) return
+
+      setTitle('')
+      toast.success('Todo created', { position: 'top-center' })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to create todo.', { position: 'top-center' })
+    } finally {
+      setIsCreating(false)
+    }
   }
 
-  const removeTodo = (id: string) => {
-    deleteTodo(id)
+  const removeTodo = async (id: string) => {
+    await deleteTodo(id)
     toast.info('Todo deleted', { position: 'top-center' })
   }
 
-  const clearScopedCompleted = () => {
-    clearCompleted(groupName)
-    toast.info('Completed todos cleared', { position: 'top-center' })
+  const clearScopedCompleted = async () => {
+    setIsClearing(true)
+
+    try {
+      await clearCompleted(groupName)
+      toast.info('Completed todos cleared', { position: 'top-center' })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to clear todos.', { position: 'top-center' })
+    } finally {
+      setIsClearing(false)
+    }
   }
 
   return (
@@ -105,6 +139,8 @@ export function TodoPage({ groupName }: { groupName?: string }) {
         group={group}
         groupName={groupName}
         priority={priority}
+        isCreating={isCreating}
+        unavailable={isLoading || !!loadError}
         groupOptions={groupOptions}
         totalCount={scopedTodos.length}
         activeCount={activeCount}
@@ -116,20 +152,30 @@ export function TodoPage({ groupName }: { groupName?: string }) {
         onAddTodo={submitTodo}
       />
 
-      <TodoList
-        filter={filter}
-        completedCount={completedCount}
-        groups={groups}
-        groupedTodos={groupedTodos}
-        search={search}
-        groupName={groupName}
-        visibleCount={visibleTodos.length}
-        onFilterChange={setFilter}
-        onClearCompleted={clearScopedCompleted}
-        onToggle={toggleTodo}
-        onUpdate={updateTodo}
-        onDelete={removeTodo}
-      />
+      {loadError ? (
+        <LoadFailure message={loadError} onRetry={reload} />
+      ) : isLoading ? (
+        <div className="text-muted-foreground flex items-center justify-center gap-2 py-16 text-sm">
+          <Spinner />
+          Loading todos...
+        </div>
+      ) : (
+        <TodoList
+          filter={filter}
+          completedCount={completedCount}
+          isClearing={isClearing}
+          groups={groupNames}
+          groupedTodos={groupedTodos}
+          search={search}
+          groupName={groupName}
+          visibleCount={visibleTodos.length}
+          onFilterChange={setFilter}
+          onClearCompleted={clearScopedCompleted}
+          onToggle={toggleTodo}
+          onUpdate={updateTodo}
+          onDelete={removeTodo}
+        />
+      )}
     </div>
   )
 }
@@ -140,6 +186,8 @@ function TodoManager({
   group,
   groupName,
   priority,
+  isCreating,
+  unavailable,
   groupOptions,
   totalCount,
   activeCount,
@@ -155,6 +203,8 @@ function TodoManager({
   group: string
   groupName?: string
   priority: Tpriority
+  isCreating: boolean
+  unavailable: boolean
   groupOptions: { value: string; label: string }[]
   totalCount: number
   activeCount: number
@@ -196,6 +246,7 @@ function TodoManager({
                 onChange={(event) => onTitleChange(event.target.value)}
                 placeholder="Add a new task..."
                 className="flex-1"
+                maxLength={200}
                 required
               />
             </Field>
@@ -229,9 +280,9 @@ function TodoManager({
                   onChange={onPriorityChange}
                 />
               </Field>
-              <Button type="submit" disabled={!title.trim()}>
+              <Button type="submit" disabled={unavailable || isCreating || !title.trim()}>
                 <CirclePlus aria-hidden="true" />
-                Add
+                {isCreating ? 'Adding...' : 'Add'}
               </Button>
             </div>
           </form>
@@ -262,9 +313,30 @@ function Stat({ label, value }: { label: string; value: number }) {
   )
 }
 
+function LoadFailure({ message, onRetry }: { message: string; onRetry: () => Promise<void> }) {
+  const [isRetrying, setIsRetrying] = useState(false)
+
+  const retry = async () => {
+    setIsRetrying(true)
+    await onRetry()
+    setIsRetrying(false)
+  }
+
+  return (
+    <section className="flex items-center justify-between rounded-lg border p-4">
+      <p className="text-destructive text-sm">{message}</p>
+      <Button type="button" variant="outline" disabled={isRetrying} onClick={() => void retry()}>
+        {isRetrying ? <Spinner /> : null}
+        Retry
+      </Button>
+    </section>
+  )
+}
+
 function TodoList({
   filter,
   completedCount,
+  isClearing,
   groups,
   groupedTodos,
   search,
@@ -278,16 +350,17 @@ function TodoList({
 }: {
   filter: Tfilter
   completedCount: number
+  isClearing: boolean
   groups: string[]
   groupedTodos: Record<string, Ttodo[]>
   search: string
   groupName?: string
   visibleCount: number
   onFilterChange: (filter: Tfilter) => void
-  onClearCompleted: () => void
-  onToggle: (id: string, completed: boolean) => void
-  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => void
-  onDelete: (id: string) => void
+  onClearCompleted: () => Promise<void>
+  onToggle: (id: string, completed: boolean) => Promise<void>
+  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => Promise<void>
+  onDelete: (id: string) => Promise<void>
 }) {
   return (
     <section className="flex flex-col gap-6">
@@ -305,8 +378,14 @@ function TodoList({
             </Button>
           ))}
         </div>
-        <Button type="button" variant="ghost" disabled={completedCount === 0} onClick={onClearCompleted}>
-          Clear completed
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={isClearing || completedCount === 0}
+          onClick={() => void onClearCompleted()}
+        >
+          {isClearing ? <Spinner /> : null}
+          {isClearing ? 'Clearing...' : 'Clear completed'}
         </Button>
       </div>
 
