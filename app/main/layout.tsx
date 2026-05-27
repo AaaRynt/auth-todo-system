@@ -61,7 +61,7 @@ function Header() {
       <Link href="/main/all" className="text-sm font-medium">
         Auth Todo
       </Link>
-      <GroupBtn />
+      <GroupBtn showExport />
     </header>
   )
 }

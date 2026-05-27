@@ -5,10 +5,10 @@ import { RiGithubFill } from '@remixicon/react'
 import { Export, Theme } from '@/components/features'
 import { Button, ButtonGroup } from '@/components/ui'
 
-export function GroupBtn() {
+export function GroupBtn({ showExport = false }: { showExport?: boolean }) {
   return (
     <ButtonGroup className="hidden sm:flex">
-      <Export />
+      {showExport ? <Export /> : null}
       <Theme />
       <GitHub />
     </ButtonGroup>
