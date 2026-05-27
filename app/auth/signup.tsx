@@ -27,7 +27,7 @@ import {
   HoverCardTrigger,
   Input,
   Spinner,
-} from '@/components/ui/'
+} from '@/components/ui'
 
 export function Signup({
   onSwitch,
@@ -62,25 +62,30 @@ export function Signup({
     setError('')
     setIsSubmitting(true)
 
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
-        username: username.trim(),
-        password,
-      }),
-    })
-    const data = (await response.json().catch(() => null)) as { message?: string } | null
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          username: username.trim(),
+          password,
+        }),
+      })
+      const data = (await response.json().catch(() => null)) as { message?: string } | null
 
-    if (!response.ok) {
-      setError(data?.message ?? 'Sign up failed.')
+      if (!response.ok) {
+        setError(data?.message ?? 'Sign up failed.')
+        return
+      }
+
+      window.sessionStorage.removeItem('main-welcome-shown')
+      router.push('/main')
+    } catch {
+      setError('Unable to reach the server. Please try again.')
+    } finally {
       setIsSubmitting(false)
-      return
     }
-
-    window.sessionStorage.removeItem('main-welcome-shown')
-    router.push('/main')
   }
 
   return (

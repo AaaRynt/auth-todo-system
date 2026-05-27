@@ -27,7 +27,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   Spinner,
-} from '@/components/ui/'
+} from '@/components/ui'
 import { nicknameMaxLength } from '@/lib/auth/profile'
 
 export function Account({ user, setUser }: { user: TAuthUser; setUser: (user: TAuthUser) => void }) {
@@ -80,24 +80,31 @@ function EditProfile({ user, setUser }: { user: TAuthUser; setUser: (user: TAuth
     setError('')
     setIsSubmitting(true)
 
-    const response = await fetch('/api/auth/account', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ nickname: trimmedNickname }),
-    })
-    const data = (await response.json().catch(() => null)) as { user?: NonNullable<TAuthUser>; message?: string } | null
+    try {
+      const response = await fetch('/api/auth/account', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ nickname: trimmedNickname }),
+      })
+      const data = (await response.json().catch(() => null)) as {
+        user?: NonNullable<TAuthUser>
+        message?: string
+      } | null
 
-    if (!response.ok || !data?.user) {
-      setError(data?.message ?? 'Profile update failed.')
+      if (!response.ok || !data?.user) {
+        setError(data?.message ?? 'Profile update failed.')
+        return
+      }
+
+      setUser(data.user)
+      toast.success(`Hello, ${data.user.nickname}`, { position: 'top-center' })
+      setIsOpen(false)
+    } catch {
+      setError('Unable to reach the server. Please try again.')
+    } finally {
       setIsSubmitting(false)
-      return
     }
-
-    setUser(data.user)
-    toast.success(`Hello, ${data.user.nickname}`, { position: 'top-center' })
-    setIsSubmitting(false)
-    setIsOpen(false)
   }
 
   return (
@@ -126,7 +133,6 @@ function EditProfile({ user, setUser }: { user: TAuthUser; setUser: (user: TAuth
             <DialogTitle>Edit profile</DialogTitle>
             <DialogDescription>Update the name shown in your account menu.</DialogDescription>
           </DialogHeader>
-          {/* [todo]: Update the Avatar */}
           <Field>
             <FieldLabel htmlFor={nicknameId}>Nickname</FieldLabel>
             <Input
@@ -200,28 +206,32 @@ function ChangePasswordField() {
     setSuccess('')
     setIsSubmitting(true)
 
-    const response = await fetch('/api/auth/password', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
-        currentPassword,
-        newPassword,
-      }),
-    })
-    const data = (await response.json().catch(() => null)) as { message?: string } | null
+    try {
+      const response = await fetch('/api/auth/password', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      })
+      const data = (await response.json().catch(() => null)) as { message?: string } | null
 
-    if (!response.ok) {
-      setError(data?.message ?? 'Password update failed.')
+      if (!response.ok) {
+        setError(data?.message ?? 'Password update failed.')
+        return
+      }
+
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setSuccess('Password updated.')
+    } catch {
+      setError('Unable to reach the server. Please try again.')
+    } finally {
       setIsSubmitting(false)
-      return
     }
-
-    setCurrentPassword('')
-    setNewPassword('')
-    setConfirmPassword('')
-    setSuccess('Password updated.')
-    setIsSubmitting(false)
   }
 
   return (
@@ -401,19 +411,25 @@ function Logout() {
   async function handleLogout() {
     setIsLoggingOut(true)
 
-    const response = await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'same-origin',
-    }).catch(() => null)
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'same-origin',
+      })
 
-    if (!response?.ok) {
+      if (!response.ok) {
+        toast.error('Logout failed. Please try again.', { position: 'top-center' })
+        return
+      }
+
+      window.sessionStorage.removeItem('main-welcome-shown')
+      router.replace('/auth')
+      router.refresh()
+    } catch {
+      toast.error('Unable to reach the server. Please try again.', { position: 'top-center' })
+    } finally {
       setIsLoggingOut(false)
-      return
     }
-
-    window.sessionStorage.removeItem('main-welcome-shown')
-    router.replace('/auth')
-    router.refresh()
   }
 
   return (
@@ -449,23 +465,28 @@ function Deactivate({ user }: { user: TAuthUser }) {
     setError('')
     setIsSubmitting(true)
 
-    const response = await fetch('/api/auth/account', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ password }),
-    })
-    const data = (await response.json().catch(() => null)) as { message?: string } | null
+    try {
+      const response = await fetch('/api/auth/account', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ password }),
+      })
+      const data = (await response.json().catch(() => null)) as { message?: string } | null
 
-    if (!response.ok) {
-      setError(data?.message ?? 'Account deletion failed.')
+      if (!response.ok) {
+        setError(data?.message ?? 'Account deletion failed.')
+        return
+      }
+
+      window.sessionStorage.removeItem('main-welcome-shown')
+      router.replace('/auth')
+      router.refresh()
+    } catch {
+      setError('Unable to reach the server. Please try again.')
+    } finally {
       setIsSubmitting(false)
-      return
     }
-
-    window.sessionStorage.removeItem('main-welcome-shown')
-    router.replace('/auth')
-    router.refresh()
   }
 
   return (

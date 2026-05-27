@@ -10,8 +10,8 @@ import { defaultGroup } from '@/app/data/const'
 import type { TAuthUser } from '@/app/data/type'
 import { NewGroupDialog } from '@/app/main/todo/new-group-dialog'
 import { TodoProvider, useTodoContext } from '@/app/main/todo/todo-provider'
-import { Account, GroupBtn, GroupEdit } from '@/components/features/'
-import { Button, Input, Spinner, buttonVariants } from '@/components/ui/'
+import { Account, GroupBtn, GroupEdit, Theme } from '@/components/features'
+import { Button, Input, Spinner, buttonVariants } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -62,6 +62,7 @@ function Header() {
       <Link href="/main/all" className="text-sm font-medium">
         Auth Todo
       </Link>
+      <Theme />
       <GroupBtn />
     </header>
   )
@@ -155,9 +156,9 @@ function Aside({ user, setUser }: { user: TAuthUser; setUser: (user: TAuthUser) 
 }
 
 function getActiveGroup(pathname: string) {
-  if (!pathname.startsWith('/main/group/')) return null
+  if (!pathname.startsWith('/main/group')) return null
 
-  const group = pathname.replace('/main/group/', '')
+  const group = pathname.replace('/main/group', '')
 
   try {
     return decodeURIComponent(group)

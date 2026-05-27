@@ -20,7 +20,7 @@ import {
   FieldSet,
   Input,
   Spinner,
-} from '@/components/ui/'
+} from '@/components/ui'
 
 export function Login({
   onSwitch,
@@ -43,27 +43,30 @@ export function Login({
     setError('')
     setIsSubmitting(true)
 
-    // await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          username: username.trim(),
+          password,
+        }),
+      })
+      const data = (await response.json().catch(() => null)) as { message?: string } | null
 
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({
-        username: username.trim(),
-        password,
-      }),
-    })
-    const data = (await response.json().catch(() => null)) as { message?: string } | null
+      if (!response.ok) {
+        setError(data?.message ?? 'Login failed.')
+        return
+      }
 
-    if (!response.ok) {
-      setError(data?.message ?? 'Login failed.')
+      window.sessionStorage.removeItem('main-welcome-shown')
+      router.push('/main')
+    } catch {
+      setError('Unable to reach the server. Please try again.')
+    } finally {
       setIsSubmitting(false)
-      return
     }
-
-    window.sessionStorage.removeItem('main-welcome-shown')
-    router.push('/main')
   }
 
   return (
@@ -102,12 +105,7 @@ export function Login({
               </Field>
 
               <Field>
-                <div className="flex items-center gap-3">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a href="#" className="text-primary ml-auto text-sm underline-offset-4 hover:underline">
-                    Forgot password?
-                  </a>
-                </div>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
                 <div className="relative">
                   <LockKeyhole
                     className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2"

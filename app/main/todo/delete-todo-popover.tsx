@@ -14,7 +14,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
   Spinner,
-} from '@/components/ui/'
+} from '@/components/ui'
 import { playTrashSound } from '@/lib/play-trash-sound'
 
 export function DeleteTodoPopover({ todo, onDelete }: { todo: Ttodo; onDelete: (id: string) => Promise<void> }) {

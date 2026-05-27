@@ -2,7 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/'
+import { Button } from '@/components/ui'
 
 const cookieNoticeStorageKey = 'auth-todo-cookie-notice-accepted'
 

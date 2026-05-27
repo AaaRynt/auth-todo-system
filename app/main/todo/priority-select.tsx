@@ -3,7 +3,7 @@
 
 import { priorityOptions } from '@/app/data/const'
 import type { Tpriority } from '@/app/data/type'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui'
 import { cn } from '@/lib/utils'
 
 export function PrioritySelect({

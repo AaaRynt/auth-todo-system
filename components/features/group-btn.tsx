@@ -4,7 +4,7 @@
 import { RiGithubFill } from '@remixicon/react'
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/components/theme-provider'
-import { Button, ButtonGroup } from '@/components/ui/'
+import { Button, ButtonGroup } from '@/components/ui'
 
 export function GroupBtn() {
   return (

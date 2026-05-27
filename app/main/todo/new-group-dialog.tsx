@@ -21,7 +21,7 @@ import {
   FieldLabel,
   Input,
   Spinner,
-} from '@/components/ui/'
+} from '@/components/ui'
 
 export function NewGroupDialog({
   groups,

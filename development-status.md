@@ -1,710 +1,347 @@
-# Auth Todo System Development Status
+# Auth Todo System - Development Status
 
-最后更新：2026-05-24
+最后更新：2026-05-27
 
-## 1. 项目定位
+## 1. 当前结论
 
-这个项目目前已经从一个前端 Todo 原型，推进到了“有真实登录闭环的个人任务系统”阶段。
+项目已经不再是只保存在浏览器里的 Todo 原型。目前代码实现了：
 
-当前更准确的定位是：
+- 基于 PostgreSQL 与 Prisma 7 的账号、session、group、todo 数据模型。
+- 注册、登录、保持登录态、退出、修改昵称、修改密码、注销账号的认证闭环。
+- Todo 的查询、新建、修改、完成切换、删除与清理已完成项。
+- Group 的查询、新建、改名、删除，以及删除 group 时将 todo 移动到 `Inbox`。
+- Todo 与 Group 的后端查询、创建、更新和删除都绑定当前登录用户。
+- 全局 necessary cookie notice banner。
 
-- 一个基于账号体系的个人 Todo 管理应用。
-- 认证系统已经接入真实 PostgreSQL 数据库。
-- Todo 功能目前仍主要运行在浏览器本地状态和 `localStorage`。
-- 下一阶段重点是把 Todo 从本地数据迁移到后端数据库，并且和当前登录用户绑定。
-
-如果未来要作为个人主力项目，建议继续保持这个方向：先把基础数据闭环做稳，再逐步补体验、统计、搜索、归档、部署和移动端适配。
-
-## 2. 技术栈
-
-当前项目使用：
-
-- Next.js App Router
-- React 19
-- TypeScript
-- Tailwind CSS v4
-- shadcn / Radix 风格的本地 UI 组件
-- lucide-react 图标
-- sonner toast
-- Prisma 7 新 generator 架构
-- PostgreSQL，本地开发使用 PostgreSQL.app
-- `@prisma/adapter-pg` 连接 PostgreSQL
-- pnpm 包管理
-
-重要约定：
-
-- 不执行 build 命令。
-- 文件和文件夹使用 lowercase kebab-case。
-- 类型以 `T` 或 `I` 开头。
-- 跨目录导入使用 `@/`。
-- feature 组件集中在 `components/features/`。
-- UI 基础组件集中在 `components/ui/`。
-- 每个文件开头保留项目路径注释。
-
-## 3. 当前数据库设计
-
-Prisma schema 在 `prisma/schema.prisma`。
-
-当前只有认证相关模型：
-
-```prisma
-model User {
-  id           String   @id @default(uuid())
-  username     String   @unique
-  nickname     String
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  sessions Session[]
-}
-
-model Session {
-  id        String   @id @default(uuid())
-  tokenHash String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-```
-
-当前 migration：
-
-- `20260512170000-init-auth`：创建 `User` 和 `Session`。
-- `20260519000000-add-user-nickname`：给 `User` 增加 `nickname`，并把已有用户的 nickname 回填为 username。
-
-这两个 migration 不应该合并。它们是数据库演进历史，和 Git commit 类似，应该按时间顺序保留。
-
-## 4. Prisma 配置
-
-项目保留了 Prisma 7 新 generator 架构：
-
-```prisma
-generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
-}
-```
-
-所以执行：
-
-```bash
-pnpm prisma generate
-```
-
-会生成 Prisma Client 到：
+目前适合描述为：
 
 ```text
-app/generated/prisma/
+业务代码已达到可演示的 database-backed MVP；
+本地 migration history 已对齐，下一阶段应集中在可靠性测试与部署准备。
 ```
 
-本地数据库连接通过 `.env` 的 `DATABASE_URL` 控制，当前开发方式是普通本地 PostgreSQL：
+本文档已同步本轮可靠性修正；本轮没有执行 build。
 
-```env
-DATABASE_URL="postgresql://localhost:5432/auth_todo_system"
+## 2. 技术栈与结构
+
+| 分类               | 当前实现                                                          |
+| ------------------ | ----------------------------------------------------------------- |
+| Web framework      | Next.js App Router + React 19 + TypeScript                        |
+| UI                 | Tailwind CSS v4、本地 shadcn/Radix 风格组件、lucide-react、sonner |
+| 数据库             | PostgreSQL，本地开发目标为 PostgreSQL.app                         |
+| ORM                | Prisma 7 新 generator 架构 + `@prisma/adapter-pg`                 |
+| Prisma Client 输出 | `app/generated/prisma/`                                           |
+| 包管理             | pnpm                                                              |
+| 认证方式           | 数据库 session + HttpOnly cookie                                  |
+
+重要入口：
+
+- `prisma/schema.prisma`：数据库实体与关系。
+- `lib/prisma.ts`：Prisma Client 与 PostgreSQL adapter 初始化。
+- `lib/auth/session.ts`：登录态 cookie 与 session 读取。
+- `lib/todo-data.ts`：Todo/Group 的校验、序列化与 `Inbox` 规则。
+- `app/main/todo/todo-provider.tsx`：前端 Todo/Group 请求与页面共享状态。
+- `app/main/layout.tsx`：主应用侧栏、group 导航与账号入口。
+
+## 3. 数据库设计
+
+### 3.1 当前模型
+
+| 模型      | 职责           | 关键约束                                     |
+| --------- | -------------- | -------------------------------------------- |
+| `User`    | 账号与 profile | `username` 唯一，包含 `nickname` 与密码 hash |
+| `Session` | 登录 session   | token hash 唯一；删除 User 时级联删除        |
+| `Group`   | 用户的任务分组 | 归属 `userId`；`@@unique([userId, name])`    |
+| `Todo`    | 用户任务       | 同时保存 `userId` 与 `groupId`               |
+
+Todo 和 Group 使用复合关系：
+
+```prisma
+group Group @relation(fields: [groupId, userId], references: [id, userId], onDelete: Cascade)
 ```
 
-Prisma 客户端封装在 `lib/prisma.ts`，使用 `PrismaPg` adapter。
+这条约束的作用是：一个 Todo 无法在数据库层面关联到其他用户的 Group。API 层的 ownership 校验之外，数据库仍提供了一层隔离保证。
 
-## 5. 认证系统现状
+### 3.2 Group 删除策略
 
-认证后端已经形成闭环。
+当前选择的是“保留 Todo”而不是级联删除业务数据：
 
-已完成 API：
+- `Inbox` 是默认 group，不能改名或删除。
+- 删除其他 group 时，其 todos 会在 transaction 中移动到当前用户的 `Inbox`。
+- 删除确认弹窗会显示预计移动的 todo 数量。
 
-- `POST /api/auth/register`
-  - 注册用户。
-  - 默认 `nickname = username`。
-  - 密码会被 hash 后保存。
-  - 注册成功后自动创建 session。
+对任务应用来说，这个策略比直接删除任务更合理，因为删除分类不应默认导致任务丢失。
 
-- `POST /api/auth/login`
-  - 校验 username 和 password。
-  - 登录成功后创建 session。
+### 3.3 Migration 状态：已对齐
 
-- `GET /api/auth/me`
-  - 读取当前 session。
-  - 返回当前用户信息。
+代码仓库中存在三个 migration：
 
-- `POST /api/auth/logout`
-  - 删除当前 session。
-  - 清理 cookie。
+| 本地 migration                         | 内容                        |
+| -------------------------------------- | --------------------------- |
+| `20260512170000-init-auth`             | 创建 `User`、`Session`      |
+| `20260519000000-add-user-nickname`     | 增加并回填 `nickname`       |
+| `20260524141948_add_todo_models`       | 创建 `Group`、`Todo` 与关系 |
 
-- `PATCH /api/auth/password`
-  - 修改密码。
-  - 需要当前密码。
-  - 新密码必须满足密码策略。
+此前仓库中的 Todo/Group migration 文件名为 `20260524000000-add-group-todo-models`，数据库已登记的名称为 `20260524141948_add_todo_models`。本轮将仓库中的 migration 路径对齐到数据库既有记录，SQL 内容未改变，也没有重置数据库或删除业务数据。
 
-- `PATCH /api/auth/account`
-  - 修改用户 profile。
-  - 当前只支持 nickname。
+本轮执行 `pnpm prisma migrate status` 的结果是：
 
-- `DELETE /api/auth/account`
-  - 注销账号。
-  - 需要输入当前密码。
-  - 删除用户后 session 会被清理。
+```text
+3 migrations found in prisma/migrations
+Database schema is up to date!
+```
 
-密码策略在 `lib/auth/password.ts`：
+后续原则不变：migration 一旦被共享或部署，就应保留其历史名称与内容，通过新增 migration 演进数据库，而不是重写已应用历史。
 
-- 至少 6 个字符。
-- 必须包含小写字母。
-- 必须包含大写字母。
-- 必须包含数字。
+## 4. 认证与账号能力
 
-session 设计在 `lib/auth/session.ts`：
+### 4.1 API 完成情况
 
-- cookie 名称：`auth-todo-session`。
-- cookie 是 HttpOnly。
-- SameSite 使用 `lax`。
-- session token 只把 hash 存入数据库。
-- session 过期时间是 30 天。
-- 删除 User 时，Session 通过 cascade 一起删除。
+| API                        | 状态   | 能力                                               |
+| -------------------------- | ------ | -------------------------------------------------- |
+| `POST /api/auth/register`  | 已实现 | 注册，默认 `nickname = username`，自动创建 session |
+| `POST /api/auth/login`     | 已实现 | 校验密码并创建 session                             |
+| `GET /api/auth/me`         | 已实现 | 返回当前登录用户                                   |
+| `POST /api/auth/logout`    | 已实现 | 删除当前 session 并清 cookie                       |
+| `PATCH /api/auth/password` | 已实现 | 校验当前密码后修改密码                             |
+| `PATCH /api/auth/account`  | 已实现 | 修改 nickname                                      |
+| `DELETE /api/auth/account` | 已实现 | 校验密码后注销账号                                 |
 
-## 6. 认证前端现状
+### 4.2 安全设计现状
 
-认证页面在 `app/auth/`。
+- 密码通过 Node `scrypt` 加 salt 后存储，不保存明文。
+- 密码策略要求至少 6 位，且包含大小写字母和数字。
+- session cookie 为 `HttpOnly`、`SameSite=Lax`，生产环境启用 `Secure`。
+- 数据库只保存 session token 的 hash。
+- session 有 30 天过期时间。
+- 删除账号会通过外键 cascade 删除 session、groups 和 todos。
 
-当前页面和组件：
+### 4.3 认证前端
 
-- `app/auth/page.tsx`
-  - 控制 Login / Signup 切换。
-  - 把输入中的 username 传给旁边展示区。
+已实现：
 
-- `app/auth/login.tsx`
-  - 调用真实 `/api/auth/login`。
-  - 有 loading、error、禁用提交状态。
-  - password 有 Eye / EyeOff。
-  - 登录成功后跳转 `/main`。
-  - `Forgot password?` 目前只是占位，功能未实现。
+- 登录与注册真实请求。
+- 密码显隐切换。
+- 修改 nickname 的 dialog 与成功 toast。
+- 修改密码 dialog。
+- 退出登录。
+- 输入密码确认后的注销账号。
+- `AuthGuard` 在私有页面请求 `/api/auth/me` 并引导未登录用户回到 `/auth`。
 
-- `app/auth/signup.tsx`
-  - 调用真实 `/api/auth/register`。
-  - 有前端密码策略校验。
-  - 有 terms checkbox。
-  - password / confirm password 有 Eye / EyeOff。
-  - 注册成功后跳转 `/main`。
+明确不纳入当前项目范围：
 
-路由保护：
+- Forgot password 流程。
+- 头像上传。
 
-- `components/auth-guard.tsx`
-  - 公共路径：`/`、`/auth`。
-  - 非公共路径访问前请求 `/api/auth/me`。
-  - 未登录时跳转 `/auth`。
+当前仍可后续增强：
 
-根路径：
+- 更完整的个人资料字段。
 
-- `app/page.tsx`
-  - 根据 `/api/auth/me` 判断跳转 `/main` 或 `/auth`。
+## 5. Todo 与 Group 后端化
 
-## 7. Main 页面设计
+### 5.1 API 完成情况
 
-主应用布局在 `app/main/layout.tsx`。
+| API                            | 状态   | 用户隔离方式                                  |
+| ------------------------------ | ------ | --------------------------------------------- |
+| `GET /api/todos`               | 已实现 | `where: { userId: currentUser.id }`           |
+| `POST /api/todos`              | 已实现 | 创建时写入当前 `userId`                       |
+| `PATCH /api/todos/[todoId]`    | 已实现 | 先用 `id + userId` 查找 ownership             |
+| `DELETE /api/todos/[todoId]`   | 已实现 | `deleteMany` 限定 `id + userId`               |
+| `GET /api/groups`              | 已实现 | 只列出当前用户 groups                         |
+| `POST /api/groups`             | 已实现 | 创建时写入当前 `userId`                       |
+| `PATCH /api/groups/[groupId]`  | 已实现 | 先用 `id + userId` 校验 ownership             |
+| `DELETE /api/groups/[groupId]` | 已实现 | 校验 ownership，并在 transaction 内移动 todos |
 
-当前结构：
+### 5.2 前端数据流
 
-- 顶部固定 header。
-- 左侧固定 sidebar。
-- 右侧主内容区域。
-- `TodoProvider` 包住整个 main 区域。
-- sidebar 中包含：
-  - 搜索框。
-  - New Group 弹窗。
-  - All Tasks 入口。
-  - Group 列表。
-  - Account 用户菜单。
+核心数据现在不再通过 `localStorage` 保存：
 
-Account 菜单在 `components/features/account.tsx`。
+```text
+页面进入 /main
+  -> TodoProvider 并行请求 GET /api/todos 与 GET /api/groups
+  -> API 通过 session 得到当前 userId
+  -> Prisma 读取 PostgreSQL 中该用户的数据
+  -> Provider 存入 React state
+  -> UI 展示列表、统计和 group 数量
+```
+
+Todo 与 Group 的创建、修改、删除均走 API；成功后 Provider 更新当前页面 state。`localStorage` 当前只用于主题与 cookie notice 等界面偏好，不承载核心 Todo 数据。
+
+### 5.3 已完成的页面能力
+
+- 新建 Todo，并选择或输入 group 与 priority。
+- 编辑 Todo title、group、priority。
+- 完成 / 取消完成 Todo。
+- 删除单条 Todo，并有确认交互。
+- 按 All / Active / Completed 过滤。
+- 根据 title 搜索。
+- 查看 All Tasks 和指定 group。
+- 显示任务进度统计。
+- 新建、重命名、删除 group。
+- group 侧栏显示数据库返回的 todo 数量。
+- 删除 group 前说明移动到 `Inbox` 的任务数量。
+
+## 6. 辅助体验功能
 
 已完成：
 
-- 显示当前 nickname。
-- 显示账号创建天数。
-- Edit profile。
-- 修改 nickname。
-- 修改密码。
-- 退出登录。
-- 注销账号。
+- Theme toggle。
+- Toast 消息。
+- Necessary cookie notice：首次访问显示，确认状态存入 `localStorage`，不会作为 analytics consent manager 使用。
+- 主要 Todo 列表加载失败时显示错误和 Retry。
+- 新建、编辑、删除等主要 Todo/Group 操作有 loading 或错误反馈。
 
-未完成：
+## 7. 当前完成度判断
 
-- 头像上传。
-- profile 更多字段。
-- 更完整的账号设置页。
+| 模块                   | 判断                       |
+| ---------------------- | -------------------------- |
+| 基础页面和设计系统     | 可演示                     |
+| 注册/登录/session 闭环 | 已完成核心功能             |
+| Account 操作           | 已完成核心功能             |
+| Todo PostgreSQL CRUD   | 已完成代码接入             |
+| Group PostgreSQL CRUD  | 已完成代码接入             |
+| 多用户数据隔离         | API 与数据库关系均有实现   |
+| Migration 基线         | 已对齐                     |
+| 自动化测试             | 未建立                     |
+| 部署准备               | 未完成                     |
+| 产品增强功能           | 可后续规划                 |
 
-## 8. Todo 当前实现
+因此下一阶段应优先补关键测试、收紧剩余一致性边界，并准备部署与作品说明。
 
-Todo 目前是前端本地实现，核心在 `app/main/todo/todo-provider.tsx`。
+## 8. 已处理事项与优化优先级
 
-数据来源：
+### 本轮已处理
 
-- `todos` 存在浏览器 `localStorage`。
-- `groups` 也存在浏览器 `localStorage`。
-- 目前 Todo 数据还没有进入 PostgreSQL。
-- 目前 Todo 数据还没有和 User 绑定。
+#### 8.1 Migration history 分叉
 
-当前 Todo 功能：
-
-- 新建 Todo。
-- Todo title。
-- Todo group。
-- Todo priority。
-- priority 包括：
-  - low
-  - normal
-  - high
-  - urgent
-- 标记完成 / 未完成。
-- 编辑 Todo。
-- 删除 Todo。
-- 清空已完成 Todo。
-- 按 All / Active / Completed 筛选。
-- 搜索 Todo title。
-- 按 group 页面查看。
-- 创建 group。
-- group 自动去重。
-- group 路由：`/main/group/[group]`。
-
-当前 Todo 页面：
-
-- `app/main/all/page.tsx`
-  - 所有任务。
-
-- `app/main/group/[group]/page.tsx`
-  - 某个分组下的任务。
-
-- `app/main/todo/todo-page.tsx`
-  - Todo 主页面组合。
-
-- `app/main/todo/todo-item.tsx`
-  - 单条 Todo。
-
-- `app/main/todo/todo-edit-dialog.tsx`
-  - 编辑 Todo 弹窗。
-
-- `app/main/todo/new-group-dialog.tsx`
-  - 新建分组弹窗。
-
-- `app/main/todo/delete-todo-popover.tsx`
-  - 删除确认。
-
-## 9. UI 和交互设计
-
-当前 UI 的方向是偏工作台 / 管理工具风格：
-
-- 左侧导航 + 右侧内容。
-- 轻量卡片承载关键操作。
-- 表单使用 `Field`、`FieldLabel`、`FieldError`、`FieldDescription`。
-- 主要操作有 loading 和 disabled 状态。
-- 重要成功 / 删除行为使用 toast。
-- 弹窗使用 Dialog / Popover。
-- 图标来自 lucide-react。
-
-已经做过的语义化优化：
-
-- 登录、注册错误提示和输入框有关联。
-- 修改密码、注销账号、编辑 profile 使用真实 form。
-- Todo 新建、编辑、New Group 使用真实 form。
-- 部分输入控件已补 `id`、`name`、`required`、`aria-invalid`、`aria-describedby`。
-
-仍需注意：
-
-- `SearchableSelect` 目前只是基础 combobox 形态，还不是完整 ARIA combobox/listbox 实现。
-- `Forgot password?` 是占位链接。
-- 部分 UI 组件还可以继续统一语义和样式。
-
-## 10. 当前完成度判断
-
-可以认为项目当前处在：
+仓库中的 Todo/Group migration 已和数据库登记的名称对齐。验证结果为：
 
 ```text
-认证闭环已完成，Todo 仍是本地原型，正在准备进入后端化阶段。
+pnpm prisma migrate status
+Database schema is up to date!
 ```
 
-已完成度：
+#### 8.2 修正文案与真实存储不一致
 
-- 项目框架：完成。
-- UI 基础：初步完成。
-- 本地 Todo 原型：完成度较高。
-- 注册 / 登录：完成。
-- session：完成。
-- 修改密码：完成。
-- 退出登录：完成。
-- 注销账号：完成。
-- nickname：完成。
-- PostgreSQL + Prisma：基础完成。
-- Todo 后端：未开始。
-- Group 后端：未开始。
-- 部署：未开始。
-- 测试体系：未开始。
+`app/main/todo/empty-state.tsx` 中关于 Todo 保存在浏览器本地的旧文案已移除，界面不再与 PostgreSQL 持久化事实冲突。
 
-## 11. 当前主要风险
+#### 8.3 为认证/账号表单补网络异常收口
 
-### 11.1 Todo 还没有用户隔离
+登录、注册、修改昵称、修改密码、退出登录和注销账号均已处理网络请求失败：
 
-现在 Todo 存在浏览器 localStorage 中，不属于某个后端 User。
+- 表单请求使用 `try/catch/finally`，网络失败会显示错误并恢复 loading 状态。
+- 退出登录失败使用 toast 反馈，也会恢复按钮状态。
 
-结果是：
+#### 8.4 产品范围收敛
 
-- 换浏览器会丢。
-- 换设备不会同步。
-- 登出后本地 Todo 可能还在。
-- 多用户共用同一浏览器时容易混在一起。
+Forgot password 与头像上传不再作为该项目的待实现能力；登录页不再展示无实际功能的忘记密码入口，账号组件也不再保留头像上传待办。
 
-作为个人主力项目，下一步最重要的是把 Todo 和 User 绑定到数据库。
+### P1：准备部署或公开展示前处理
 
-### 11.2 AuthGuard 是客户端保护
+#### 8.5 让 group 名称唯一约束与业务规则一致
 
-目前 `AuthGuard` 是 client component，通过请求 `/api/auth/me` 做跳转。
+API 使用大小写不敏感判断 group 重名，但数据库当前唯一约束是 `@@unique([userId, name])`，PostgreSQL 默认区分大小写。并发请求或绕过前端时，业务规则和数据库约束可能不一致。
 
-这对当前阶段够用，但未来如果做更严肃的项目，可以考虑：
+建议设计一个可迁移的标准化字段，例如 `normalizedName`，并在数据库层对 `[userId, normalizedName]` 唯一约束。
 
-- middleware 保护私有路由。
-- server component 中读取 session。
-- API 层继续保持强校验。
+#### 8.6 修正删除 group 的实际移动数量
 
-最重要的是：后端 API 必须永远校验当前用户，不能只依赖前端跳转。
+当前 `movedTodoCount` 在 transaction 前读取。若恰好同时有任务写入该 group，弹窗预估数与实际移动数可能不同。
 
-### 11.3 TodoProvider 未来需要替换
+建议从 transaction 中 `updateMany()` 的 `count` 返回实际移动数量，并用该结果生成完成后的 toast。
 
-`TodoProvider` 现在管理本地状态和 localStorage。后端化后可能会变成：
+#### 8.7 密码修改后的 session 管理
 
-- 页面加载时从 API 拉取 Todo。
-- 新建 / 修改 / 删除调用 API。
-- 成功后更新本地状态。
-- localStorage 只保留 UI 偏好，不再保存核心业务数据。
+当前修改密码后，既有 session 仍然有效。对于公开部署的账号系统，更合理的策略是：
 
-### 11.4 不要过早设计复杂 Group 表
+- 修改密码后撤销其他设备的 sessions。
+- 保留或轮换当前 session，使用户不会被意外登出。
 
-当前前端里的 group 本质上还是字符串，例如 `Inbox`、`Work`、`Study`。
+#### 8.8 补 API 级关键测试
 
-如果一开始就同时做 `Todo` 表、`Group` 表、group 重命名、group 删除、外键关系、默认 Inbox、级联删除，会让后端设计复杂度突然升高。
+最重要的测试不是 UI 截图，而是 ownership：
 
-更适合当前阶段的方式是：
+- 用户 A 创建 Todo，用户 B 的 `GET /api/todos` 不可见。
+- 用户 B 不可 PATCH/DELETE 用户 A 的 Todo。
+- 用户 B 不可改名/删除用户 A 的 Group。
+- 删除 Group 时任务准确移动到该用户自己的 `Inbox`。
+- 删除账号后相关数据被 cascade 清理。
 
-- 第一阶段只做 `Todo` 单表。
-- 在 `Todo` 表里先放一个 `groupName String`。
-- 等 Todo 数据闭环稳定后，再考虑是否把 Group 拆成独立表。
+### P2：完成作品包装与下一阶段体验
 
-### 11.5 迁移和生成文件要区分
+- 把默认 metadata description 和默认 README 改为真实项目说明。
+- 将 `clearCompleted` 从多个 DELETE 请求改为单个后端 bulk endpoint，保证原子性并减少请求。
+- 把 group 页面路由从可变的 display name 改为稳定 id 或 slug，减少 rename 对 URL 的影响。
+- 将 `priority` 从任意字符串提升为数据库可约束的值。
+- 再评估归档、due date、排序与部署。
 
-需要保留：
+## 9. 推荐执行顺序
 
-- `prisma/schema.prisma`
-- `prisma/migrations/`
+### Milestone A：基础可靠性修正（已完成）
 
-可以重新生成：
+1. 对齐 migration history，当前数据库状态检查通过。
+2. 修正 empty-state 的本地存储旧文案。
+3. 为认证和账号操作补请求异常处理。
+4. 移除 Forgot password / 头像上传待办范围。
 
-- `app/generated/prisma/`
+### Milestone B：加强可靠性与安全边界
 
-不需要提交：
+1. 修复 group 删除移动数量的 transaction 返回值。
+2. 落实大小写不敏感的 group 唯一约束。
+3. 增加 ownership 和 cascade 的 API 集成测试。
+4. 设计修改密码后的 session 撤销策略。
 
-- `.next/`
-- `tsconfig.tsbuildinfo`
-- `cookies.txt`
+### Milestone C：准备作品展示
 
-## 12. 下一阶段建议路线
+1. 配置部署数据库与环境变量。
+2. 验证注册到 Todo/Group CRUD 的完整演示路径。
+3. 准备 README 中的架构说明、功能截图和本地启动步骤。
+4. 再决定增加 due date、archive 或排序等产品功能。
 
-### Phase 1：稳定认证和项目清理
+## 10. 本次扫描验证记录
 
-目标：让当前认证能力作为稳定底座。
+本轮执行且通过：
 
-建议任务：
-
-- 检查当前 dirty files，确认哪些是要保留的改动。
-- 确认 `app/generated/prisma/` 是否决定提交到 Git。
-- 清理临时文件：`cookies.txt`、空的 `temp.md` 等。
-- 决定 `components/ui/avatar.tsx` 是否纳入项目。
-- 把 README 从 create-next-app 默认内容改成项目说明。
-
-### Phase 2：最小 Todo 单表落库
-
-目标：先完成最小后端闭环。
-
-第一阶段不要急着单独建 Group 表，先让 Todo 自己带 `groupName`。
-
-建议新增模型：
-
-```prisma
-model Todo {
-  id        String   @id @default(uuid())
-  title     String
-  completed Boolean  @default(false)
-  priority  String   @default("normal")
-  groupName String   @default("Inbox")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
+```bash
+pnpm prisma migrate status
+pnpm prisma validate
+pnpm exec tsc --noEmit --incremental false
+pnpm exec prettier --check development-status.md app/auth/login.tsx app/auth/signup.tsx components/features/account.tsx
+git diff --check
 ```
 
-同时需要在 `User` 上补关系：
+本轮执行并完成、但存在与本轮修复无关的 warning：
 
-```prisma
-model User {
-  // existing fields...
-  todos Todo[]
-}
+```bash
+pnpm lint
 ```
 
-这个设计的优点：
+当前未跟踪文件 `components/features/theme.tsx` 中的 `useEffect` 和 `useState` import 未被使用，ESLint 报告两个 warning；提交或接入该组件前应清理。
 
-- 和当前前端结构最接近。
-- 不需要马上处理 Group 外键。
-- 不需要马上处理 group 重命名带来的批量更新。
-- 更容易理解“当前登录用户只能操作自己的 Todo”。
-- 更适合先完成第一个后端闭环。
+未执行：
 
-这一阶段的完成标准：
+- `pnpm build`，项目约定禁止运行。
+- 浏览器端完整回归测试。
+- 会重置数据库或删除业务数据的命令。
+
+## 11. 建议优先阅读的代码
+
+为了理解目前系统如何工作，阅读顺序建议为：
+
+1. `prisma/schema.prisma`：先理解 User、Session、Group、Todo 如何关联。
+2. `lib/auth/session.ts`：理解 cookie 如何换取当前用户身份。
+3. `app/api/todos/route.ts`：理解创建和查询如何绑定 `userId`。
+4. `app/api/groups/[groupId]/route.ts`：理解 ownership 与删除分组事务。
+5. `lib/todo-data.ts`：理解统一校验、序列化与默认 `Inbox`。
+6. `app/main/todo/todo-provider.tsx`：理解 API 数据如何进入 UI 状态。
+7. `app/main/todo/todo-page.tsx` 与 `app/main/layout.tsx`：理解最终交互展示。
+
+## 12. 工作区提示
+
+本轮开始时，Git 工作区已经存在一项不是本次可靠性修改产生的删除：
 
 ```text
-登录用户可以创建 Todo，Todo 写入 PostgreSQL，刷新页面后仍然能从数据库读回来。
+components/ui/avatar.tsx
 ```
 
-### Phase 3：最小 Todo API
-
-第一批只做最少 API：
-
-- `GET /api/todos`
-  - 获取当前用户的 todos。
-
-- `POST /api/todos`
-  - 创建当前用户的 todo。
-
-先不要急着做删除、清空、独立 group 管理。
-
-每个 API 的固定结构应该是：
-
-```ts
-const user = await getCurrentUser()
-
-if (!user) {
-  return NextResponse.json({ message: 'Unauthorized.' }, { status: 401 })
-}
-```
-
-查询时必须带上当前用户：
-
-```ts
-where: {
-  userId: user.id
-}
-```
-
-创建时必须写入当前用户：
-
-```ts
-data: {
-  title,
-  priority,
-  groupName,
-  userId: user.id
-}
-```
-
-这是后端设计里最重要的概念之一：用户隔离。
-
-用户 A 永远只能看到自己的 Todo，用户 B 永远只能看到自己的 Todo。
-
-### Phase 4：只接入加载和新建
-
-目标：先让前端从数据库读写 Todo，但尽量不动 UI。
-
-建议先改 `TodoProvider` 的这两部分：
-
-1. 初始化时不再从 localStorage 读 todos，而是请求：
-
-```text
-GET /api/todos
-```
-
-2. 新建 Todo 时不再只改 React state，而是请求：
-
-```text
-POST /api/todos
-```
-
-成功后再把后端返回的 Todo 放进 React state。
-
-这一阶段先不急着处理：
-
-- edit
-- delete
-- toggle completed
-- clear completed
-
-原因是初学后端时，最重要的是先理解一条数据从前端到数据库再回到前端的路径。
-
-### Phase 5：补更新能力
-
-加载和新建稳定后，再补：
-
-- `PATCH /api/todos/[todoId]`
-  - 修改 title。
-  - 修改 priority。
-  - 修改 groupName。
-  - 修改 completed。
-
-前端对应接入：
-
-- 编辑 Todo。
-- 勾选完成 / 未完成。
-
-后端更新时必须同时限制：
-
-```ts
-where: {
-  id: todoId,
-  userId: user.id
-}
-```
-
-这样可以避免用户通过接口修改别人的 Todo。
-
-### Phase 6：补删除和清空
-
-再下一步补：
-
-- `DELETE /api/todos/[todoId]`
-  - 删除当前用户自己的 todo。
-
-- `POST /api/todos/clear-completed`
-  - 清理当前用户的已完成 Todo。
-  - 如果在某个 group 页面，可以只清理当前 group。
-
-这一步完成后，当前 Todo UI 的主要行为就都能落库了。
-
-### Phase 7：再考虑独立 Group 表
-
-只有当你需要这些能力时，再把 Group 拆成独立表：
-
-- group 改名。
-- group 删除。
-- group 排序。
-- group 颜色。
-- group 图标。
-- group 归档。
-- group 统计。
-
-未来可能的 Group / Todo 关系草案：
-
-```prisma
-model Group {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  todos  Todo[]
-
-  @@unique([userId, slug])
-}
-
-model Todo {
-  id        String   @id @default(uuid())
-  title     String
-  priority  String
-  completed Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  userId  String
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  groupId String
-  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
-}
-```
-
-这不是当前第一步要做的设计，只是未来演进方向。真正写 migration 前需要再确认：
-
-- group 是否允许重名。
-- 是否需要 slug。
-- Todo 是否需要 due date。
-- 是否需要 description。
-- 是否需要 order / sortIndex。
-- priority 是否继续用字符串，还是用 enum。
-
-### Phase 8：补个人主力项目体验
-
-建议功能：
-
-- Todo 详情描述。
-- 截止日期。
-- 今日 / 本周视图。
-- 归档。
-- 置顶。
-- 拖拽排序。
-- 快捷键。
-- 批量操作。
-- 搜索增强。
-- group 颜色。
-- 任务统计。
-- 移动端适配。
-
-### Phase 9：部署和长期维护
-
-建议准备：
-
-- README 项目说明。
-- `.env.example`。
-- 生产数据库。
-- Vercel 部署配置。
-- Prisma migrate deploy 流程。
-- 基础测试。
-- 错误日志。
-- 数据备份策略。
-
-## 13. 当前推荐的下一步
-
-最推荐下一步：
-
-```text
-先做 Todo 单表 PostgreSQL 化，不急着独立 Group 表。
-```
-
-不要一开始就大改 UI。当前 UI 已经能支撑 Todo 的基本操作，真正缺的是数据持久化和用户隔离。
-
-建议第一个后端化目标：
-
-```text
-登录用户可以创建 Todo，刷新页面后 Todo 仍然从数据库加载回来。
-```
-
-做到这一点后，这个项目就会从“带登录的本地 Todo”升级成“真正的个人 Todo 系统”。
-
-## 14. 初学后端时的实现节奏
-
-建议每次只做一个可验证的小闭环。
-
-不要这样做：
-
-```text
-一次性建 Todo + Group + API + 前端重构 + UI 优化。
-```
-
-更推荐这样做：
-
-1. 改 Prisma schema，只新增最小 `Todo`。
-2. 跑 migration。
-3. 跑 `pnpm prisma generate`。
-4. 写 `GET /api/todos`。
-5. 写 `POST /api/todos`。
-6. 用 curl 或浏览器 Network 验证 API。
-7. 改 `TodoProvider` 的初始化加载。
-8. 改 `addTodo` 调用 POST。
-9. 刷新页面确认数据还在。
-10. 再继续 PATCH / DELETE。
-
-每一阶段都应该能回答一个问题：
-
-```text
-这一步完成后，我能不能用浏览器或 curl 看到一个明确结果？
-```
-
-如果答案是能，这一步就是合适的后端学习任务。
+该删除与“不做头像上传”的范围选择一致，但提交前仍应由你确认是否一起纳入提交。

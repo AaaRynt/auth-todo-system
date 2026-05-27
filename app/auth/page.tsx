@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { GroupBtn } from '@/components/features/'
+import { GroupBtn } from '@/components/features'
 import { Login } from './login'
 import { Other } from './other'
 import { Signup } from './signup'

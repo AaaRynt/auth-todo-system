@@ -7,7 +7,7 @@ import { useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import type { Tpriority, Ttodo } from '@/app/data/type'
 import { PrioritySelect } from '@/app/main/todo/priority-select'
-import { SearchableSelect } from '@/components/features/'
+import { SearchableSelect } from '@/components/features'
 import {
   Button,
   Dialog,
@@ -23,7 +23,7 @@ import {
   FieldLabel,
   Input,
   Spinner,
-} from '@/components/ui/'
+} from '@/components/ui'
 
 export function TodoEditDialog({
   todo,
