@@ -1,12 +1,15 @@
 // lib/todo-data.ts
-import type { TGroup, Tpriority, Ttodo } from '@/app/data/type'
 import { prisma } from '@/lib/prisma'
+import {
+  defaultGroupName,
+  defaultPriority,
+  groupNameMaxLength,
+  todoPriorityValues,
+  todoTitleMaxLength,
+} from '@/lib/todo-constants'
+import type { TGroup, TPriority, TTodo } from '@/types/todo'
 
-export const defaultGroupName = 'Inbox'
-export const groupNameMaxLength = 50
-export const todoTitleMaxLength = 200
-
-const priorityValues = new Set<Tpriority>(['low', 'normal', 'high', 'urgent'])
+const priorityValues = new Set<TPriority>(todoPriorityValues)
 
 export const todoSelect = {
   id: true,
@@ -54,12 +57,12 @@ type TGroupRecord = {
   }
 }
 
-export function serializeTodo(todo: TTodoRecord): Ttodo {
+export function serializeTodo(todo: TTodoRecord): TTodo {
   return {
     id: todo.id,
     title: todo.title,
     completed: todo.completed,
-    priority: normalizePriority(todo.priority) ?? 'normal',
+    priority: normalizePriority(todo.priority) ?? defaultPriority,
     groupId: todo.group.id,
     group: todo.group.name,
     createdAt: todo.createdAt.getTime(),
@@ -78,7 +81,7 @@ export function serializeGroup(group: TGroupRecord): TGroup {
 export function normalizePriority(priority: unknown) {
   if (typeof priority !== 'string') return null
 
-  return priorityValues.has(priority as Tpriority) ? (priority as Tpriority) : null
+  return priorityValues.has(priority as TPriority) ? (priority as TPriority) : null
 }
 
 export function normalizeGroupName(name: unknown) {

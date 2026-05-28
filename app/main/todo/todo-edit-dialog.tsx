@@ -5,7 +5,6 @@ import { PencilLine } from 'lucide-react'
 import type { ComponentProps } from 'react'
 import { useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import type { Tpriority, Ttodo } from '@/app/data/type'
 import { PrioritySelect } from '@/app/main/todo/priority-select'
 import { SearchableSelect } from '@/components/features'
 import {
@@ -24,20 +23,21 @@ import {
   Input,
   Spinner,
 } from '@/components/ui'
+import type { TPriority, TTodo } from '@/types/todo'
 
 export function TodoEditDialog({
   todo,
   groups,
   onUpdate,
 }: {
-  todo: Ttodo
+  todo: TTodo
   groups: string[]
-  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => Promise<void>
+  onUpdate: (id: string, updates: Partial<Pick<TTodo, 'title' | 'group' | 'priority'>>) => Promise<void>
 }) {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState(todo.title)
   const [group, setGroup] = useState(todo.group)
-  const [priority, setPriority] = useState<Tpriority>(todo.priority)
+  const [priority, setPriority] = useState<TPriority>(todo.priority)
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const formId = useId()

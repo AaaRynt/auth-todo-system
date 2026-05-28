@@ -1,8 +1,8 @@
 // lib/auth/session.ts
 import { cookies } from 'next/headers'
 import { createHash, randomBytes } from 'node:crypto'
-import type { TSessionUser } from '@/app/data/type'
 import { prisma } from '@/lib/prisma'
+import type { TSessionUser } from '@/types/auth'
 
 const sessionCookieName = 'auth-todo-session'
 const sessionExpiresInMs = 1000 * 60 * 60 * 24 * 30

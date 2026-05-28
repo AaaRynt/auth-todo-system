@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import type { ComponentProps } from 'react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import type { TGroup } from '@/app/data/type'
 import {
   Button,
   Dialog,
@@ -26,6 +25,7 @@ import {
   Spinner,
 } from '@/components/ui'
 import { playTrashSound } from '@/lib/play-trash-sound'
+import type { TGroup } from '@/types/todo'
 
 export function GroupEdit({
   group,

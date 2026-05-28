@@ -5,11 +5,10 @@ import { CirclePlus, Folder, ListTodo } from 'lucide-react'
 import type { ComponentProps } from 'react'
 import { useId, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { defaultGroup, defaultPriority, filters } from '@/app/data/const'
-import type { Tfilter, Tpriority, Ttodo } from '@/app/data/type'
 import { EmptyState } from '@/app/main/todo/empty-state'
 import { PrioritySelect } from '@/app/main/todo/priority-select'
 import { TodoItem } from '@/app/main/todo/todo-item'
+import { filters } from '@/app/main/todo/todo-options'
 import { useTodoContext } from '@/app/main/todo/todo-provider'
 import { SearchableSelect } from '@/components/features'
 import {
@@ -25,6 +24,8 @@ import {
   Input,
   Spinner,
 } from '@/components/ui'
+import { defaultGroupName, defaultPriority } from '@/lib/todo-constants'
+import type { TFilter, TPriority, TTodo } from '@/types/todo'
 
 export function TodoPage({ groupName }: { groupName?: string }) {
   const {
@@ -41,9 +42,9 @@ export function TodoPage({ groupName }: { groupName?: string }) {
     clearCompleted,
   } = useTodoContext()
   const [title, setTitle] = useState('')
-  const [group, setGroup] = useState(groupName || defaultGroup)
-  const [priority, setPriority] = useState<Tpriority>(defaultPriority)
-  const [filter, setFilter] = useState<Tfilter>('all')
+  const [group, setGroup] = useState(groupName || defaultGroupName)
+  const [priority, setPriority] = useState<TPriority>(defaultPriority)
+  const [filter, setFilter] = useState<TFilter>('all')
   const [isCreating, setIsCreating] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
   const scopeTitle = groupName || 'All Tasks'
@@ -79,8 +80,8 @@ export function TodoPage({ groupName }: { groupName?: string }) {
 
     return true
   })
-  const groupedTodos = visibleTodos.reduce<Record<string, Ttodo[]>>((result, todo) => {
-    const key = todo.group || defaultGroup
+  const groupedTodos = visibleTodos.reduce<Record<string, TTodo[]>>((result, todo) => {
+    const key = todo.group || defaultGroupName
 
     result[key] = result[key] ?? []
     result[key].push(todo)
@@ -202,7 +203,7 @@ function TodoManager({
   title: string
   group: string
   groupName?: string
-  priority: Tpriority
+  priority: TPriority
   isCreating: boolean
   unavailable: boolean
   groupOptions: { value: string; label: string }[]
@@ -212,7 +213,7 @@ function TodoManager({
   completionRate: number
   onTitleChange: (title: string) => void
   onGroupChange: (group: string) => void
-  onPriorityChange: (priority: Tpriority) => void
+  onPriorityChange: (priority: TPriority) => void
   onAddTodo: NonNullable<ComponentProps<'form'>['onSubmit']>
 }) {
   const formId = useId()
@@ -348,18 +349,18 @@ function TodoList({
   onUpdate,
   onDelete,
 }: {
-  filter: Tfilter
+  filter: TFilter
   completedCount: number
   isClearing: boolean
   groups: string[]
-  groupedTodos: Record<string, Ttodo[]>
+  groupedTodos: Record<string, TTodo[]>
   search: string
   groupName?: string
   visibleCount: number
-  onFilterChange: (filter: Tfilter) => void
+  onFilterChange: (filter: TFilter) => void
   onClearCompleted: () => Promise<void>
   onToggle: (id: string, completed: boolean) => Promise<void>
-  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => Promise<void>
+  onUpdate: (id: string, updates: Partial<Pick<TTodo, 'title' | 'group' | 'priority'>>) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }) {
   return (

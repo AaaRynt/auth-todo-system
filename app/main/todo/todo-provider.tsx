@@ -3,19 +3,19 @@
 
 import type * as React from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import type { TGroup, Ttodo } from '@/app/data/type'
 import { normalizeTodo } from '@/lib/normalize-todo'
+import type { TGroup, TTodo } from '@/types/todo'
 
-type TtodoDraft = Pick<Ttodo, 'title' | 'group' | 'priority'>
-type TtodoUpdates = Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>
+type TTodoDraft = Pick<TTodo, 'title' | 'group' | 'priority'>
+type TTodoUpdates = Partial<Pick<TTodo, 'title' | 'group' | 'priority'>>
 
 type TTodosResponse = {
-  todos: Ttodo[]
+  todos: TTodo[]
   message?: string
 }
 
 type TTodoResponse = {
-  todo: Ttodo
+  todo: TTodo
   groups: TGroup[]
   message?: string
 }
@@ -42,8 +42,8 @@ type TDeleteTodoResponse = {
   message?: string
 }
 
-type TtodoContextValue = {
-  todos: Ttodo[]
+type TTodoContextValue = {
+  todos: TTodo[]
   groups: TGroup[]
   search: string
   isLoading: boolean
@@ -53,17 +53,17 @@ type TtodoContextValue = {
   createGroup: (name: string) => Promise<TGroup>
   renameGroup: (id: string, name: string) => Promise<TGroup>
   deleteGroup: (id: string) => Promise<number>
-  addTodo: (todo: TtodoDraft) => Promise<Ttodo | null>
+  addTodo: (todo: TTodoDraft) => Promise<TTodo | null>
   toggleTodo: (id: string, completed: boolean) => Promise<void>
-  updateTodo: (id: string, updates: TtodoUpdates) => Promise<void>
+  updateTodo: (id: string, updates: TTodoUpdates) => Promise<void>
   deleteTodo: (id: string) => Promise<void>
   clearCompleted: (group?: string) => Promise<void>
 }
 
-const TodoContext = createContext<TtodoContextValue | null>(null)
+const TodoContext = createContext<TTodoContextValue | null>(null)
 
 export function TodoProvider({ children }: { children: React.ReactNode }) {
-  const [todos, setTodos] = useState<Ttodo[]>([])
+  const [todos, setTodos] = useState<TTodo[]>([])
   const [groups, setGroups] = useState<TGroup[]>([])
   const [search, setSearch] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -171,7 +171,7 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     return data.movedTodoCount
   }, [])
 
-  const addTodo = useCallback(async (todo: TtodoDraft) => {
+  const addTodo = useCallback(async (todo: TTodoDraft) => {
     const title = todo.title.trim()
 
     if (!title) return null
@@ -202,7 +202,7 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     setGroups(sortGroups(data.groups))
   }, [])
 
-  const updateTodo = useCallback(async (id: string, updates: TtodoUpdates) => {
+  const updateTodo = useCallback(async (id: string, updates: TTodoUpdates) => {
     const data = await requestJson<TTodoResponse>(`/api/todos/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
@@ -248,7 +248,7 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
     [reload, todos],
   )
 
-  const value = useMemo<TtodoContextValue>(
+  const value = useMemo<TTodoContextValue>(
     () => ({
       todos,
       groups,

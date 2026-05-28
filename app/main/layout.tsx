@@ -6,12 +6,12 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { defaultGroup } from '@/app/data/const'
-import type { TAuthUser } from '@/app/data/type'
 import { NewGroupDialog, TodoProvider, useTodoContext } from '@/app/main/todo/'
 import { Account, GroupBtn, GroupEdit } from '@/components/features'
 import { Button, Input, Spinner, buttonVariants } from '@/components/ui'
+import { defaultGroupName } from '@/lib/todo-constants'
 import { cn } from '@/lib/utils'
+import type { TAuthUser } from '@/types/auth'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<TAuthUser>(null)
@@ -137,7 +137,7 @@ function Aside({ user, setUser }: { user: TAuthUser; setUser: (user: TAuthUser) 
                       <Folder className="size-5" aria-hidden="true" />
                       <span className="truncate">{group.name}</span>
                     </Link>
-                    {group.name.toLowerCase() !== defaultGroup.toLowerCase() ? (
+                    {group.name.toLowerCase() !== defaultGroupName.toLowerCase() ? (
                       <GroupEdit group={group} isActive={active} onRename={renameGroup} onDelete={deleteGroup} />
                     ) : null}
                   </div>

@@ -2,7 +2,8 @@
 import { NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth/session'
 import { prisma } from '@/lib/prisma'
-import { defaultGroupName, groupSelect, normalizeGroupName, serializeGroup, validateGroupName } from '@/lib/todo-data'
+import { defaultGroupName } from '@/lib/todo-constants'
+import { groupSelect, normalizeGroupName, serializeGroup, validateGroupName } from '@/lib/todo-data'
 
 export const runtime = 'nodejs'
 

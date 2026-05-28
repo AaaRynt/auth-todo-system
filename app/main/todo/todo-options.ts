@@ -1,12 +1,13 @@
-// app/data/const.tsx
-import type { Tfilter, Tpriority } from './type'
+// app/main/todo/todo-options.ts
+import type { TFilter, TPriority } from '@/types/todo'
 
-export const filters: Array<{ value: Tfilter; label: string }> = [
+export const filters: Array<{ value: TFilter; label: string }> = [
   { value: 'all', label: 'All' },
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' },
 ]
-export const priorityOptions: Array<{ value: Tpriority; label: string; className: string }> = [
+
+export const priorityOptions: Array<{ value: TPriority; label: string; className: string }> = [
   {
     value: 'low',
     label: 'Low',
@@ -32,5 +33,3 @@ export const priorityOptions: Array<{ value: Tpriority; label: string; className
       'border-red-500/40 text-red-600 focus:text-red-700 not-data-[variant=destructive]:focus:**:text-red-700 dark:text-red-300 dark:focus:text-red-400 dark:not-data-[variant=destructive]:focus:**:text-red-400',
   },
 ]
-export const defaultPriority: Tpriority = 'normal'
-export const defaultGroup: string = 'Inbox'

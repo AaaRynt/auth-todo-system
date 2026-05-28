@@ -4,7 +4,6 @@
 import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import type { Ttodo } from '@/app/data/type'
 import {
   Button,
   Popover,
@@ -16,8 +15,9 @@ import {
   Spinner,
 } from '@/components/ui'
 import { playTrashSound } from '@/lib/play-trash-sound'
+import type { TTodo } from '@/types/todo'
 
-export function DeleteTodoPopover({ todo, onDelete }: { todo: Ttodo; onDelete: (id: string) => Promise<void> }) {
+export function DeleteTodoPopover({ todo, onDelete }: { todo: TTodo; onDelete: (id: string) => Promise<void> }) {
   const [open, setOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 

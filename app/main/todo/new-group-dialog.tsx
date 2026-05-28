@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import type { ComponentProps } from 'react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import type { TGroup } from '@/app/data/type'
 import {
   Button,
   Dialog,
@@ -22,6 +21,7 @@ import {
   Input,
   Spinner,
 } from '@/components/ui'
+import type { TGroup } from '@/types/todo'
 
 export function NewGroupDialog({
   groups,

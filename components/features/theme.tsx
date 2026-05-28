@@ -1,11 +1,9 @@
 // components/features/theme.tsx
 'use client'
 
-import { Palette } from 'lucide-react'
-import { Moon, Sun } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Moon, Palette, Sun } from 'lucide-react'
 import { useTheme } from '@/components/theme-provider'
-import { Button, Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger, Switch } from '@/components/ui'
+import { Button, Popover, PopoverContent, PopoverHeader, PopoverTitle, PopoverTrigger } from '@/components/ui'
 
 export function Theme() {
   return (

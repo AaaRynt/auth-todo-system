@@ -3,11 +3,11 @@
 
 import { Download } from 'lucide-react'
 import { toast } from 'sonner'
-import type { TGroup, Ttodo } from '@/app/data/type'
 import { useTodoContext } from '@/app/main/todo/todo-provider'
 import { Button } from '@/components/ui'
+import type { TGroup, TTodo } from '@/types/todo'
 
-type TExportTodo = Omit<Ttodo, 'createdAt' | 'updatedAt'> & {
+type TExportTodo = Omit<TTodo, 'createdAt' | 'updatedAt'> & {
   createdAt: number
   updatedAt: number
 }

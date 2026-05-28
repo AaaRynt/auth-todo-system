@@ -5,12 +5,12 @@
 import { CalendarClock, Flag } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { priorityOptions } from '@/app/data/const'
-import { Ttodo } from '@/app/data/type'
 import { DeleteTodoPopover } from '@/app/main/todo/delete-todo-popover'
 import { TodoEditDialog } from '@/app/main/todo/todo-edit-dialog'
+import { priorityOptions } from '@/app/main/todo/todo-options'
 import { Badge, Checkbox, Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import type { TTodo } from '@/types/todo'
 
 export function TodoItem({
   todo,
@@ -19,10 +19,10 @@ export function TodoItem({
   onUpdate,
   onDelete,
 }: {
-  todo: Ttodo
+  todo: TTodo
   groups: string[]
   onToggle: (id: string, completed: boolean) => Promise<void>
-  onUpdate: (id: string, updates: Partial<Pick<Ttodo, 'title' | 'group' | 'priority'>>) => Promise<void>
+  onUpdate: (id: string, updates: Partial<Pick<TTodo, 'title' | 'group' | 'priority'>>) => Promise<void>
   onDelete: (id: string) => Promise<void>
 }) {
   const [isToggling, setIsToggling] = useState(false)

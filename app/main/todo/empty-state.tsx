@@ -1,8 +1,8 @@
 // app/main/todo/empty-state.tsx
 import { ListTodo } from 'lucide-react'
-import type { Tfilter } from '@/app/data/type'
+import type { TFilter } from '@/types/todo'
 
-export function EmptyState({ filter, search, groupName }: { filter: Tfilter; search?: string; groupName?: string }) {
+export function EmptyState({ filter, search, groupName }: { filter: TFilter; search?: string; groupName?: string }) {
   const searching = Boolean(search?.trim())
   const message = searching
     ? 'No matching tasks. Try a different title.'

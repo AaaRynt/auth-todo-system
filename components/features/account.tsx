@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import type { ComponentProps } from 'react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import type { TAuthUser } from '@/app/data/type'
 import {
   Button,
   Dialog,
@@ -29,6 +28,7 @@ import {
   Spinner,
 } from '@/components/ui'
 import { nicknameMaxLength } from '@/lib/auth/profile'
+import type { TAuthUser } from '@/types/auth'
 
 export function Account({ user, setUser }: { user: TAuthUser; setUser: (user: TAuthUser) => void }) {
   const displayName = user?.nickname ?? user?.username ?? 'Account'

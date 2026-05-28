@@ -1,10 +1,10 @@
 // app/main/todo/priority-select.tsx
 'use client'
 
-import { priorityOptions } from '@/app/data/const'
-import type { Tpriority } from '@/app/data/type'
+import { priorityOptions } from '@/app/main/todo/todo-options'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import type { TPriority } from '@/types/todo'
 
 export function PrioritySelect({
   id,
@@ -16,13 +16,13 @@ export function PrioritySelect({
   id?: string
   name?: string
   className?: string
-  value: Tpriority
-  onChange: (priority: Tpriority) => void
+  value: TPriority
+  onChange: (priority: TPriority) => void
 }) {
   const selected = priorityOptions.find((item) => item.value === value) ?? priorityOptions[1]
 
   return (
-    <Select name={name} value={value} onValueChange={(nextValue) => onChange(nextValue as Tpriority)}>
+    <Select name={name} value={value} onValueChange={(nextValue) => onChange(nextValue as TPriority)}>
       <SelectTrigger id={id} updown={true} className={cn('w-24', selected.className, className)}>
         <SelectValue />
       </SelectTrigger>
