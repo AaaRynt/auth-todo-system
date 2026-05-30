@@ -1,36 +1,127 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Auth Todo System
+
+Auth Todo System is a database-backed todo application built with Next.js App Router, React, TypeScript, Prisma, and PostgreSQL. It combines a complete username/password authentication flow with per-user task and group management.
+
+中文文档: [README_zh.md](README_zh.md)
+
+## Features
+
+- User registration, login, session persistence, logout, nickname editing, password change, and account deletion.
+- HttpOnly session cookie storage with hashed session tokens in the database.
+- Password hashing with Node.js `scrypt` and a basic password policy.
+- Per-user Todo and Group data isolation at both API and database relationship levels.
+- Todo creation, editing, completion toggle, deletion, filtering, search, priority selection, and completed-task cleanup.
+- Group creation, rename, deletion, and automatic move of deleted-group todos into `Inbox`.
+- PostgreSQL persistence through Prisma 7 and `@prisma/adapter-pg`.
+- Theme toggle, theme presets, toast feedback, cookie notice, and JSON export for current todos.
+
+## Tech Stack
+
+| Area               | Stack                                                          |
+| ------------------ | -------------------------------------------------------------- |
+| Framework          | Next.js App Router                                             |
+| UI                 | React 19, Tailwind CSS v4, local shadcn/Radix-style components |
+| Language           | TypeScript                                                     |
+| Database           | PostgreSQL                                                     |
+| ORM                | Prisma 7 with `@prisma/adapter-pg`                             |
+| Package manager    | pnpm                                                           |
+| Icons and feedback | lucide-react, Remix Icon, sonner                               |
+
+## Project Structure
+
+```text
+app/
+  api/                 Route handlers for auth, todos, and groups
+  auth/                Login and sign-up page
+  main/                Authenticated todo workspace
+  generated/prisma/    Generated Prisma client output
+components/
+  features/            User-facing feature components
+  ui/                  Reusable UI primitives
+lib/
+  auth/                Password, session, and profile helpers
+  prisma.ts            Prisma client initialization
+  todo-data.ts         Todo and group validation/serialization helpers
+prisma/
+  migrations/          Database migration history
+  schema.prisma        User, Session, Group, and Todo models
+types/                 Shared TypeScript types
+```
+
+## Data Model
+
+The application stores four main models:
+
+- `User`: account identity, nickname, and password hash.
+- `Session`: hashed session token and expiration.
+- `Group`: per-user task groups, including the default `Inbox`.
+- `Todo`: per-user tasks with title, completion state, priority, and group relation.
+
+Todos are related to groups by both `groupId` and `userId`, which prevents a todo from being associated with another user's group at the database level.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create a local `.env` file with a PostgreSQL connection string:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/auth_todo_system"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Apply migrations during local development:
 
-## Learn More
+```bash
+pnpm prisma migrate dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Start the development server:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open `http://localhost:3000`.
 
-## Deploy on Vercel
+## Available Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Script            | Description                                                  |
+| ----------------- | ------------------------------------------------------------ |
+| `pnpm dev`        | Start the Next.js development server.                        |
+| `pnpm lint`       | Run ESLint.                                                  |
+| `pnpm start`      | Start the production server after a production build exists. |
+| `pnpm build`      | Run `prisma migrate deploy` and `next build`.                |
+| `pnpm prisma ...` | Run Prisma commands through pnpm.                            |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## API Overview
+
+Authentication:
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
+- `PATCH /api/auth/password`
+- `PATCH /api/auth/account`
+- `DELETE /api/auth/account`
+
+Todos and groups:
+
+- `GET /api/todos`
+- `POST /api/todos`
+- `PATCH /api/todos/[todoId]`
+- `DELETE /api/todos/[todoId]`
+- `GET /api/groups`
+- `POST /api/groups`
+- `PATCH /api/groups/[groupId]`
+- `DELETE /api/groups/[groupId]`
+
+All todo and group endpoints require an active session and only operate on the current user's data.
+
+## Current Status
+
+The project is a database-backed MVP suitable for local demonstration. Core authentication, account management, todo CRUD, group CRUD, and user data isolation are implemented. Automated tests are not currently included.
