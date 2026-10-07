@@ -17,15 +17,15 @@ English documentation: [README.md](README.md)
 
 ## 技术栈
 
-| 分类       | 技术                                                  |
-| ---------- | ----------------------------------------------------- |
-| 框架       | Next.js App Router                                    |
-| UI         | React 19、Tailwind CSS v4、本地 shadcn/Radix 风格组件 |
-| 语言       | TypeScript                                            |
-| 数据库     | PostgreSQL                                            |
-| ORM        | Prisma 7 + `@prisma/adapter-pg`                       |
-| 包管理     | pnpm                                                  |
-| 图标与反馈 | lucide-react、Remix Icon、sonner                      |
+| 分类       | 技术                                                      |
+| ---------- | --------------------------------------------------------- |
+| 框架       | Next.js App Router                                        |
+| UI         | React 19、Tailwind CSS v4、本地 shadcn/Radix 风格组件     |
+| 语言       | TypeScript 7 原生类型检查；TypeScript 6 编译器 API 兼容层 |
+| 数据库     | PostgreSQL                                                |
+| ORM        | Prisma 7 + `@prisma/adapter-pg`                           |
+| 包管理     | pnpm                                                      |
+| 图标与反馈 | lucide-react、Remix Icon、sonner                          |
 
 ## 项目结构
 
@@ -89,13 +89,16 @@ pnpm dev
 
 ## 可用脚本
 
-| 脚本              | 说明                                           |
-| ----------------- | ---------------------------------------------- |
-| `pnpm dev`        | 启动 Next.js 开发服务器。                      |
-| `pnpm lint`       | 运行 ESLint。                                  |
-| `pnpm start`      | 在已有生产构建后启动生产服务器。               |
-| `pnpm build`      | 执行 `prisma migrate deploy` 和 `next build`。 |
-| `pnpm prisma ...` | 通过 pnpm 运行 Prisma 命令。                   |
+| 脚本                    | 说明                                                |
+| ----------------------- | --------------------------------------------------- |
+| `pnpm dev`              | 启动 Next.js 开发服务器。                           |
+| `pnpm lint`             | 运行 ESLint。                                       |
+| `pnpm typecheck`        | 使用 TypeScript 7 检查项目，不输出文件。            |
+| `pnpm test`             | 执行纯函数、API、Session 和前端测试，不需要数据库。 |
+| `pnpm test:integration` | 使用独立临时 PostgreSQL 实例执行集成测试。          |
+| `pnpm start`            | 在已有生产构建后启动生产服务器。                    |
+| `pnpm build`            | 执行 `prisma migrate deploy` 和 `next build`。      |
+| `pnpm prisma ...`       | 通过 pnpm 运行 Prisma 命令。                        |
 
 ## API 概览
 
@@ -124,4 +127,6 @@ Todo 和 Group：
 
 ## 当前状态
 
-项目目前是一个 database-backed MVP，适合本地演示。账号认证、账号管理、Todo CRUD、Group CRUD 和多用户数据隔离已经实现。当前尚未建立自动化测试。
+项目目前是一个 database-backed MVP，适合本地演示。账号认证、账号管理、Todo CRUD、Group CRUD 和多用户数据隔离已经实现，已有 399 个自动化测试用例。运行命令、编译器兼容方案和覆盖边界见 [testing.md](testing.md)。
+
+Workspace 协作与 RBAC 目前处于产品讨论阶段，尚未实现。已确定的方向记录在 [workspace-design.md](workspace-design.md)。

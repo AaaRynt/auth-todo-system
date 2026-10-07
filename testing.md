@@ -1,6 +1,6 @@
 # 自动化测试
 
-使用 Vitest 运行测试。纯函数、API 和 Session 测试使用 Node 环境；第五批前端测试使用 jsdom。已有依赖版本保持不变，前四批没有新增依赖，第五批仅新增以下固定版本的开发依赖：
+使用 Vitest 运行测试。纯函数、API 和 Session 测试使用 Node 环境；前端测试使用 jsdom。前六批测试保持已有依赖版本不变，前四批没有新增依赖，第五批仅新增以下固定版本的开发依赖：
 
 | 开发依赖                      | 版本     | 用途                       |
 | ----------------------------- | -------- | -------------------------- |
@@ -12,13 +12,38 @@
 本次使用 Node `24.19.0` 验证。jsdom `30.1.2` 需要 Node `^22.22.2 || ^24.15.0 || >=26.0.0`。
 
 ```bash
+pnpm typecheck
 pnpm test
 pnpm test:watch
 pnpm test:ui
 pnpm test:integration
 ```
 
-`pnpm test` 执行不依赖数据库的测试并退出；`pnpm test:watch` 监听文件变化；`pnpm test:ui` 只运行前端 `.test.tsx` 文件；`pnpm test:integration` 单独运行真实 PostgreSQL 测试。这些命令都不运行 Next.js build。
+`pnpm typecheck` 使用 TypeScript 7 检查整个项目，不输出文件或增量缓存；`pnpm test` 执行不依赖数据库的测试并退出；`pnpm test:watch` 监听文件变化；`pnpm test:ui` 只运行前端 `.test.tsx` 文件；`pnpm test:integration` 单独运行真实 PostgreSQL 测试。这些命令都不运行 Next.js build。
+
+## TypeScript 编译器与工具兼容
+
+工具链升级后使用两个固定版本的开发依赖：
+
+| package.json 名称    | 实际包与版本                    | 用途                                                        |
+| -------------------- | ------------------------------- | ----------------------------------------------------------- |
+| `@typescript/native` | `typescript@7.0.2`              | 提供原生 `tsc`，运行项目类型检查                            |
+| `typescript`         | `@typescript/typescript6@6.0.2` | 提供编译器 API 和 `tsc6`，供 Next.js、ESLint 等现有工具使用 |
+
+TypeScript 7.0 暂未提供旧编译器 API，当前 Next.js 和 typescript-eslint 仍使用这些 API，因此采用 [官方并存方案](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/)。`pnpm-workspace.yaml` 的定向 override 将兼容包内部 `@typescript/old` 固定到 `typescript@6.0.2`，避免它的范围依赖自动采用其他 6.x 版本。其他已有依赖版本及严格类型检查配置保持不变。
+
+验证版本与兼容编译器：
+
+```bash
+pnpm exec tsc --version
+# Version 7.0.2
+pnpm exec tsc6 --version
+# Version 6.0.2
+pnpm exec tsc6 --noEmit --incremental false
+pnpm lint
+```
+
+`require('typescript')` 解析到 6.0.2 的兼容 API，而 `pnpm typecheck` 调用 7.0.2 的原生 `tsc`。安装、测试和类型检查通过不等同于生产构建已验证；按项目约定不执行 build。
 
 ## 当前覆盖范围
 

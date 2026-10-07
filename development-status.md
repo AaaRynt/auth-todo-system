@@ -1,6 +1,6 @@
 # Auth Todo System - Development Status
 
-最后更新：2026-10-07（已补充六批自动化测试，此前验证记录保留历史上下文）
+最后更新：2026-10-07（已补充六批自动化测试及 TypeScript 7 工具链，此前验证记录保留历史上下文）
 
 ## 1. 当前结论
 
@@ -24,15 +24,16 @@
 
 ## 2. 技术栈与结构
 
-| 分类               | 当前实现                                                          |
-| ------------------ | ----------------------------------------------------------------- |
-| Web framework      | Next.js App Router + React 19 + TypeScript                        |
-| UI                 | Tailwind CSS v4、本地 shadcn/Radix 风格组件、lucide-react、sonner |
-| 数据库             | PostgreSQL，本地开发目标为 PostgreSQL.app                         |
-| ORM                | Prisma 7 新 generator 架构 + `@prisma/adapter-pg`                 |
-| Prisma Client 输出 | `app/generated/prisma/`                                           |
-| 包管理             | pnpm                                                              |
-| 认证方式           | 数据库 session + HttpOnly cookie                                  |
+| 分类               | 当前实现                                                            |
+| ------------------ | ------------------------------------------------------------------- |
+| Web framework      | Next.js App Router + React 19 + TypeScript                          |
+| 类型检查           | TypeScript 7.0.2 原生编译器；6.0.2 API 兼容层供 Next.js/ESLint 使用 |
+| UI                 | Tailwind CSS v4、本地 shadcn/Radix 风格组件、lucide-react、sonner   |
+| 数据库             | PostgreSQL，本地开发目标为 PostgreSQL.app                           |
+| ORM                | Prisma 7 新 generator 架构 + `@prisma/adapter-pg`                   |
+| Prisma Client 输出 | `app/generated/prisma/`                                             |
+| 包管理             | pnpm                                                                |
+| 认证方式           | 数据库 session + HttpOnly cookie                                    |
 
 重要入口：
 
@@ -407,3 +408,15 @@ API 测试不访问数据库；事务测试验证 callback 内部的操作和执
 运行方法与范围见 [testing.md](./testing.md)。本次使用现有测试依赖，不新增依赖或修改依赖版本，不运行 build。React 组件检查未引入新的状态、Effect 或组件层级；侧栏高亮继续由当前路径派生。
 
 本次验证通过：普通测试 28 个文件、378 个用例，移除 `DATABASE_URL` 后仍全部通过；前端测试共 12 个文件、117 个用例；真实 PostgreSQL 集成测试 4 个文件、21 个用例通过，临时实例已清理。合计 399 个用例，TypeScript、ESLint、修改文件的 Prettier 检查与 Git diff 空白检查通过。
+
+## 19. TypeScript 工具链升级与协作产品讨论（2026-10-07）
+
+已按用户明确要求升级 TypeScript。`@typescript/native` 别名安装 `typescript@7.0.2`，提供原生 `tsc`；`typescript` 别名安装 `@typescript/typescript6@6.0.2`，为 Next.js 和 ESLint 保留旧编译器 API，并提供 `tsc6`。兼容包底层的 `@typescript/old` 使用范围依赖，因此在 `pnpm-workspace.yaml` 中定向锁定到 `typescript@6.0.2`。
+
+新增 `pnpm typecheck`，执行 `tsc --noEmit --incremental false`。`tsconfig.json` 和其他已有依赖版本均保持不变，没有修改业务代码、数据库模型、migration 或 API。没有执行 build；安装跳过 lifecycle scripts，未触发 Prisma generate。
+
+采用兼容包的原因是 TypeScript 7.0 尚未提供旧编译器 API，而当前 Next.js 和 typescript-eslint 仍使用它们。检查分为两个入口：CLI 的 `tsc` 是 7.0.2；工具使用的 `require('typescript')` 是 6.0.2 的 API。后者不能仅凭前者检查通过来证明，因此独立验证了 Next.js 配置解析、`createProgram` API 以及 ESLint。
+
+本次验证通过：7.0.2 原生类型检查、6.0.2 兼容类型检查、Next.js 配置解析、ESLint、普通测试 378 个用例与独立 PostgreSQL 集成测试 21 个用例，合计 399 个用例。临时数据库实例已清理，冻结 lockfile 安装、修改文件的 Prettier 检查与 Git diff 空白检查通过。安装仍报告既有 Vitest 5 对 `@types/node` 版本的 peer warning；本次保持原版本，没有扩大升级范围。
+
+Workspace 协作和 RBAC 仍处于产品讨论阶段，尚未实现。已确定的产品方向、角色权限、下一步待讨论边界和学习方式见 [workspace-design.md](./workspace-design.md)。后续按阶段讲解和独立提交，简历按实际完成情况更新。

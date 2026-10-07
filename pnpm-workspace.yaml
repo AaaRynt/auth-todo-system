@@ -1,3 +1,7 @@
+overrides:
+  # The compatibility wrapper depends on TypeScript ^6; keep its compiler pinned.
+  '@typescript/typescript6>@typescript/old': 'npm:typescript@6.0.2'
+
 allowBuilds:
   '@prisma/engines': true
   msw: true

@@ -17,15 +17,15 @@ Auth Todo System is a database-backed todo application built with Next.js App Ro
 
 ## Tech Stack
 
-| Area               | Stack                                                          |
-| ------------------ | -------------------------------------------------------------- |
-| Framework          | Next.js App Router                                             |
-| UI                 | React 19, Tailwind CSS v4, local shadcn/Radix-style components |
-| Language           | TypeScript                                                     |
-| Database           | PostgreSQL                                                     |
-| ORM                | Prisma 7 with `@prisma/adapter-pg`                             |
-| Package manager    | pnpm                                                           |
-| Icons and feedback | lucide-react, Remix Icon, sonner                               |
+| Area               | Stack                                                               |
+| ------------------ | ------------------------------------------------------------------- |
+| Framework          | Next.js App Router                                                  |
+| UI                 | React 19, Tailwind CSS v4, local shadcn/Radix-style components      |
+| Language           | TypeScript 7 native checks; TypeScript 6 compiler API compatibility |
+| Database           | PostgreSQL                                                          |
+| ORM                | Prisma 7 with `@prisma/adapter-pg`                                  |
+| Package manager    | pnpm                                                                |
+| Icons and feedback | lucide-react, Remix Icon, sonner                                    |
 
 ## Project Structure
 
@@ -89,13 +89,16 @@ Open `http://localhost:3000`.
 
 ## Available Scripts
 
-| Script            | Description                                                  |
-| ----------------- | ------------------------------------------------------------ |
-| `pnpm dev`        | Start the Next.js development server.                        |
-| `pnpm lint`       | Run ESLint.                                                  |
-| `pnpm start`      | Start the production server after a production build exists. |
-| `pnpm build`      | Run `prisma migrate deploy` and `next build`.                |
-| `pnpm prisma ...` | Run Prisma commands through pnpm.                            |
+| Script                  | Description                                                    |
+| ----------------------- | -------------------------------------------------------------- |
+| `pnpm dev`              | Start the Next.js development server.                          |
+| `pnpm lint`             | Run ESLint.                                                    |
+| `pnpm typecheck`        | Check the project with TypeScript 7 without emitting files.    |
+| `pnpm test`             | Run unit, API, session, and frontend tests without a database. |
+| `pnpm test:integration` | Run tests against an isolated temporary PostgreSQL instance.   |
+| `pnpm start`            | Start the production server after a production build exists.   |
+| `pnpm build`            | Run `prisma migrate deploy` and `next build`.                  |
+| `pnpm prisma ...`       | Run Prisma commands through pnpm.                              |
 
 ## API Overview
 
@@ -124,4 +127,6 @@ All todo and group endpoints require an active session and only operate on the c
 
 ## Current Status
 
-The project is a database-backed MVP suitable for local demonstration. Core authentication, account management, todo CRUD, group CRUD, and user data isolation are implemented. Automated tests are not currently included.
+The project is a database-backed MVP suitable for local demonstration. Core authentication, account management, todo CRUD, group CRUD, and user data isolation are implemented. There are 399 automated test cases; see [testing.md](testing.md) for commands, compiler compatibility, and coverage boundaries.
+
+Workspace collaboration and RBAC are under product discussion and are not implemented yet. The agreed direction is recorded in [workspace-design.md](workspace-design.md).
