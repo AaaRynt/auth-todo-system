@@ -154,13 +154,14 @@ function Aside({ user, setUser }: { user: TAuthUser; setUser: (user: TAuthUser) 
 }
 
 function getActiveGroup(pathname: string) {
-  if (!pathname.startsWith('/main/group')) return null
+  const prefix = '/main/group/'
+  if (!pathname.startsWith(prefix)) return null
 
-  const group = pathname.replace('/main/group', '')
+  const group = pathname.slice(prefix.length)
 
   try {
     return decodeURIComponent(group)
   } catch {
-    return group
+    return null
   }
 }

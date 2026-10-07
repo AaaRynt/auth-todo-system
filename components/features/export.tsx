@@ -37,12 +37,15 @@ export function Export() {
       }
       const file = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(file)
-      const link = document.createElement('a')
 
-      link.href = url
-      link.download = `auth-todo-export-${data.exportedAt}.json`
-      link.click()
-      URL.revokeObjectURL(url)
+      try {
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `auth-todo-export-${data.exportedAt}.json`
+        link.click()
+      } finally {
+        URL.revokeObjectURL(url)
+      }
 
       toast.success('Todos exported', { position: 'top-center' })
     } catch {
