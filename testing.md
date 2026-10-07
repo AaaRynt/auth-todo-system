@@ -1,14 +1,24 @@
 # 自动化测试
 
-使用已有的 Vitest 依赖，在 Node 环境中运行。没有新增依赖或修改已有依赖版本。
+使用 Vitest 运行测试。纯函数、API 和 Session 测试使用 Node 环境；第五批前端测试使用 jsdom。已有依赖版本保持不变，前四批没有新增依赖，第五批仅新增以下固定版本的开发依赖：
+
+| 开发依赖                      | 版本     | 用途                       |
+| ----------------------------- | -------- | -------------------------- |
+| `@testing-library/react`      | `16.3.3` | 渲染真实 React 组件与 Hook |
+| `@testing-library/user-event` | `14.6.7` | 模拟输入、点击和键盘交互   |
+| `@testing-library/jest-dom`   | `7.0.1`  | DOM、表单值与按钮状态断言  |
+| `jsdom`                       | `30.1.2` | 提供浏览器 DOM 环境        |
+
+本次使用 Node `24.19.0` 验证。jsdom `30.1.2` 需要 Node `^22.22.2 || ^24.15.0 || >=26.0.0`。
 
 ```bash
 pnpm test
 pnpm test:watch
+pnpm test:ui
 pnpm test:integration
 ```
 
-`pnpm test` 执行不依赖数据库的测试并退出；`pnpm test:watch` 监听文件变化；`pnpm test:integration` 单独运行真实 PostgreSQL 测试。这些命令都不运行 Next.js build。
+`pnpm test` 执行不依赖数据库的测试并退出；`pnpm test:watch` 监听文件变化；`pnpm test:ui` 只运行前端 `.test.tsx` 文件；`pnpm test:integration` 单独运行真实 PostgreSQL 测试。这些命令都不运行 Next.js build。
 
 ## 当前覆盖范围
 
@@ -104,8 +114,35 @@ pnpm test:integration tests/integration/group-deletion.test.ts
 
 这些测试不启动 Next.js HTTP 服务或浏览器，因此不验证实际 `Set-Cookie`、页面交互与 HTTP 层行为；并发时序也不在本批范围内。
 
+## 前端交互测试
+
+第五批增加 7 个前端测试文件、77 个用例，真实渲染组件、Hook 和 Radix 控件，使用 user-event 操作表单与按钮。请求通过 mock fetch 隔离，Next.js navigation、toast 与删除音效通过 mock 观察，不启动 Next.js 或连接数据库。
+
+| 测试文件                                     | 用例数 | 覆盖行为                                                                                                                |
+| -------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `app/main/todo/todo-provider.test.tsx`       | 25     | 加载/错误/空数据、reload 恢复、Todo/Group CRUD 与计数同步、失败保持状态、按分组清理完成项、部分删除失败后重载           |
+| `app/main/todo/todo-page.test.tsx`           | 9      | 加载与 Retry、All/Active/Completed 筛选、搜索、分组范围及进度、空状态、新建防重复提交与失败恢复、完成状态切换           |
+| `app/main/todo/delete-todo-popover.test.tsx` | 3      | 取消不删除、等待删除时禁用按钮、成功关闭并播放音效、失败保留弹窗并重试                                                  |
+| `app/auth/auth-forms.test.tsx`               | 17     | 登录注册校验、密码确认及条款、显示/隐藏密码、防重复提交、用户名去空格但密码保留、成功跳转、网络/HTTP/无效 JSON 失败反馈 |
+| `components/auth-guard.test.tsx`             | 7      | 公共路由跳过认证、私有内容在认证前隐藏、未授权/网络失败跳转、路由切换后忽略过期请求结果                                 |
+| `components/features/account.test.tsx`       | 12     | 昵称修改、改密、注销和退出的成功/失败反馈、请求等待状态、成功后清理密码与欢迎标记                                       |
+| `components/features/cookie-notice.test.tsx` | 4      | 首次展示、接受后隐藏及保存、下次访问不显示、浏览器存储不可用时仍可展示与关闭                                            |
+
+每个前端测试通过文件内 `@vitest-environment jsdom` 指令选择 DOM 环境，普通 Node 测试仍使用原环境。`tests/frontend/setup.ts` 提供 DOM 断言、组件卸载、存储清理、fetch 隔离与不测量布局的 ResizeObserver 替身；`tests/frontend/test-helpers.ts` 提供固定数据和可手动完成的 Promise，以检查请求等待状态。
+
+可只运行第五批，或单个前端文件：
+
+```bash
+pnpm test:ui
+pnpm test app/main/todo/todo-page.test.tsx
+```
+
+当前普通测试共 23 个文件、338 个用例；独立 PostgreSQL 集成测试 4 个文件、21 个用例；合计 359 个用例。
+
+这些测试验证 DOM 行为和发出的请求，不验证实际 HTTP 服务、浏览器 cookie、页面布局或音效播放。搜索测试通过小型测试控件写入真实 TodoProvider，不验证主布局搜索输入框的连接；数据库持久化由第四批集成测试负责。
+
 ## 后续测试范围
 
-后续仍需补充前端交互、浏览器完整流程和并发边界测试。
+后续仍需补充浏览器完整流程、任务编辑与分组弹窗交互，以及并发边界测试。
 
 分组删除的实际移动数量、大小写不敏感的数据库唯一约束、改密后撤销其他 session 仍属于待修正的业务边界，本批测试没有将这些现有缺陷固定为预期行为。

@@ -1,6 +1,6 @@
 # Auth Todo System - Development Status
 
-最后更新：2026-10-07（本次补充四批自动化测试，此前验证记录保留历史上下文）
+最后更新：2026-10-07（已补充五批自动化测试，此前验证记录保留历史上下文）
 
 ## 1. 当前结论
 
@@ -385,3 +385,13 @@ API 测试不访问数据库；事务测试验证 callback 内部的操作和执
 测试范围和 PostgreSQL 工具要求见 [testing.md](./testing.md)。前端交互、浏览器完整流程与并发边界仍待补充；分组实际移动数量、大小写不敏感数据库唯一约束及改密后 session 撤销策略仍是既有待修正事项。
 
 本次验证通过：普通测试 16 个文件、261 个用例，真实 PostgreSQL 集成测试 4 个文件、21 个用例，共 282 个用例。TypeScript、ESLint、修改文件的 Prettier 检查与 Git diff 空白检查通过；还通过无匹配测试文件的失败场景验证 runner 非零退出且清理临时实例，未遗留临时目录或 PostgreSQL 进程。
+
+## 17. 前端交互测试补充（2026-10-07）
+
+第五批增加 7 个前端测试文件、77 个用例，覆盖 TodoProvider 的请求与状态同步、TodoPage 的加载/错误/空状态和筛选搜索、任务删除确认、登录注册、AuthGuard、账户操作与 cookie notice。组件与 Hook 使用真实实现，模拟 fetch、Next.js navigation、toast 和音效；请求等待用可手动完成的 Promise 验证，包含防重复提交、失败后恢复和部分批量删除失败后的重载。
+
+为渲染组件和模拟用户操作，新增固定版本开发依赖 `@testing-library/react`、`@testing-library/user-event`、`@testing-library/jest-dom` 和 `jsdom`。已有依赖版本未修改，生产业务代码未修改，不运行 build。`pnpm test:ui` 可单独运行前端测试，普通 `pnpm test` 也包含本批用例；各文件使用 jsdom 指令，原 Node 测试保持原环境。
+
+运行方法、依赖版本和 Node 要求见 [testing.md](./testing.md)。本批验证 DOM 行为与请求参数，浏览器真实 cookie、HTTP 完整流程、布局、任务编辑和分组弹窗仍需后续测试。
+
+本次验证通过：移除 `DATABASE_URL` 后普通测试 23 个文件、338 个用例全部通过；真实 PostgreSQL 集成测试 4 个文件、21 个用例通过，临时实例已清理；合计 359 个用例。TypeScript、ESLint、修改文件的 Prettier 检查与 Git diff 空白检查通过。
