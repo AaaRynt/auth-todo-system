@@ -1,13 +1,14 @@
-# 单元测试与 API 行为测试
+# 自动化测试
 
 使用已有的 Vitest 依赖，在 Node 环境中运行。没有新增依赖或修改已有依赖版本。
 
 ```bash
 pnpm test
 pnpm test:watch
+pnpm test:integration
 ```
 
-`pnpm test` 执行一次并退出；`pnpm test:watch` 在文件变化时重新执行测试。两者都不运行 Next.js build。
+`pnpm test` 执行不依赖数据库的测试并退出；`pnpm test:watch` 监听文件变化；`pnpm test:integration` 单独运行真实 PostgreSQL 测试。这些命令都不运行 Next.js build。
 
 ## 当前覆盖范围
 
@@ -70,8 +71,41 @@ pnpm test lib/auth/session.test.ts
 
 这些测试验证 session 模块使用的数据库参数与 cookie 属性，不验证浏览器实际接收 `Set-Cookie`、Next.js 请求上下文或真实数据库的持久化和并发行为。
 
+## PostgreSQL 集成测试
+
+第四批使用真实 Prisma、session、密码校验和 Route Handler，仅模拟 `next/headers` 的 cookie store，不模拟数据库或事务。21 个用例覆盖：
+
+| 测试文件                                         | 覆盖行为                                                                                     |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `tests/integration/ownership.test.ts`            | A/B 用户列表隔离、越权修改与删除失败后数据保持、拒绝跨用户 groupId、真实 Todo 创建和更新删除 |
+| `tests/integration/group-deletion.test.ts`       | 删除分组将任务移到该用户 Inbox、缺失 Inbox 时创建、删除失败时回滚任务移动及 Inbox 创建       |
+| `tests/integration/account-deletion.test.ts`     | 注销账号级联删除全部 session/group/todo、保留其他用户数据、错误密码不删除数据                |
+| `tests/integration/database-constraints.test.ts` | 绕过 API 时复合外键仍拒绝跨用户分组关联、同用户重名分组被数据库拒绝、不同用户可有同名分组    |
+
+运行前需要 PostgreSQL 的 `initdb` 和 `postgres` 在 PATH 中。也可通过 `POSTGRES_BIN` 指定它们所在目录，例如本机 Postgres.app：
+
+```bash
+POSTGRES_BIN=/Applications/Postgres.app/Contents/Versions/latest/bin pnpm test:integration
+```
+
+无需启动既有 PostgreSQL 服务或提供数据库连接串。`tests/run-integration-tests.mjs` 在系统临时目录建立独立 PostgreSQL 实例，使用随机本机端口和临时数据库名，运行现有三个 migration，再执行集成测试；结束后关闭实例并删除临时目录。运行正常结束或测试失败均执行清理。
+
+runner 为子进程设置独立 `DATABASE_URL`/`TEST_DATABASE_URL`，不会使用开发库连接。集成测试 setup 先验证临时连接串再导入 Prisma，没有 `TEST_DATABASE_URL` 时直接失败。普通 `pnpm test` 排除集成测试目录，仍然不需要数据库。
+
+`tests/test-database-url.test.ts` 的 13 个普通单元用例验证数据库连接串保护，包括拒绝开发库名、远程地址及改变连接目的地的 query 参数。
+
+事务回滚用例安装临时 PostgreSQL trigger，让任务移动后的分组 DELETE 真实失败，再查询原任务和分组，检查新 Inbox 也被回滚。测试串行执行，trigger 在用例结束时移除；fixture 按测试用户 id 清理，整个实例最后被销毁。
+
+可只运行一类集成测试：
+
+```bash
+pnpm test:integration tests/integration/group-deletion.test.ts
+```
+
+这些测试不启动 Next.js HTTP 服务或浏览器，因此不验证实际 `Set-Cookie`、页面交互与 HTTP 层行为；并发时序也不在本批范围内。
+
 ## 后续测试范围
 
-后续仍需补充真实数据库多用户隔离、约束与级联删除、分组删除事务回滚，以及前端交互。数据库行为需要独立 PostgreSQL 测试数据库的集成测试。
+后续仍需补充前端交互、浏览器完整流程和并发边界测试。
 
 分组删除的实际移动数量、大小写不敏感的数据库唯一约束、改密后撤销其他 session 仍属于待修正的业务边界，本批测试没有将这些现有缺陷固定为预期行为。
