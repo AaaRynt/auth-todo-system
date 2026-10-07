@@ -1,6 +1,6 @@
 # Auth Todo System - Development Status
 
-最后更新：2026-05-27
+最后更新：2026-10-07（本次补充单元测试，此前验证记录保留历史上下文）
 
 ## 1. 当前结论
 
@@ -76,11 +76,11 @@ group Group @relation(fields: [groupId, userId], references: [id, userId], onDel
 
 代码仓库中存在三个 migration：
 
-| 本地 migration                         | 内容                        |
-| -------------------------------------- | --------------------------- |
-| `20260512170000-init-auth`             | 创建 `User`、`Session`      |
-| `20260519000000-add-user-nickname`     | 增加并回填 `nickname`       |
-| `20260524141948_add_todo_models`       | 创建 `Group`、`Todo` 与关系 |
+| 本地 migration                     | 内容                        |
+| ---------------------------------- | --------------------------- |
+| `20260512170000-init-auth`         | 创建 `User`、`Session`      |
+| `20260519000000-add-user-nickname` | 增加并回填 `nickname`       |
+| `20260524141948_add_todo_models`   | 创建 `Group`、`Todo` 与关系 |
 
 此前仓库中的 Todo/Group migration 文件名为 `20260524000000-add-group-todo-models`，数据库已登记的名称为 `20260524141948_add_todo_models`。本轮将仓库中的 migration 路径对齐到数据库既有记录，SQL 内容未改变，也没有重置数据库或删除业务数据。
 
@@ -193,18 +193,18 @@ Todo 与 Group 的创建、修改、删除均走 API；成功后 Provider 更新
 
 ## 7. 当前完成度判断
 
-| 模块                   | 判断                       |
-| ---------------------- | -------------------------- |
-| 基础页面和设计系统     | 可演示                     |
-| 注册/登录/session 闭环 | 已完成核心功能             |
-| Account 操作           | 已完成核心功能             |
-| Todo PostgreSQL CRUD   | 已完成代码接入             |
-| Group PostgreSQL CRUD  | 已完成代码接入             |
-| 多用户数据隔离         | API 与数据库关系均有实现   |
-| Migration 基线         | 已对齐                     |
-| 自动化测试             | 未建立                     |
-| 部署准备               | 未完成                     |
-| 产品增强功能           | 可后续规划                 |
+| 模块                   | 判断                           |
+| ---------------------- | ------------------------------ |
+| 基础页面和设计系统     | 可演示                         |
+| 注册/登录/session 闭环 | 已完成核心功能                 |
+| Account 操作           | 已完成核心功能                 |
+| Todo PostgreSQL CRUD   | 已完成代码接入                 |
+| Group PostgreSQL CRUD  | 已完成代码接入                 |
+| 多用户数据隔离         | API 与数据库关系均有实现       |
+| Migration 基线         | 已对齐                         |
+| 自动化测试             | 已建立基础单元测试，见第 13 节 |
+| 部署准备               | 未完成                         |
+| 产品增强功能           | 可后续规划                     |
 
 因此下一阶段应优先补关键测试、收紧剩余一致性边界，并准备部署与作品说明。
 
@@ -345,3 +345,13 @@ components/ui/avatar.tsx
 ```
 
 该删除与“不做头像上传”的范围选择一致，但提交前仍应由你确认是否一起纳入提交。
+
+## 13. 单元测试补充（2026-10-07）
+
+已使用现有 Vitest 依赖建立第一批单元测试，覆盖密码策略与 hash 验证、昵称校验、Todo/Group 校验与序列化，以及前端 Todo 数据规范化。使用 `pnpm test` 执行，使用 `pnpm test:watch` 持续监听文件变化；配置支持 `@/` 导入别名。
+
+测试在 Node 环境中执行，Prisma 在纯函数测试中被隔离，不需要数据库配置，也不访问开发数据库。API ownership、session、数据库集成与前端交互测试仍待补充。
+
+运行方法和范围说明见 [testing.md](./testing.md)。此前各节的“本轮”记录保留原有历史上下文，本次没有运行 build，也没有新增依赖或修改已有依赖版本。
+
+本次验证通过：4 个测试文件、90 个用例；TypeScript 检查、ESLint、修改文件的 Prettier 检查与 Git diff 空白检查。
