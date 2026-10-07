@@ -31,12 +31,16 @@ export const sessionMock = {
 export const transactionMock = {
   group: { findFirst: vi.fn(), create: vi.fn(), delete: vi.fn(), findUniqueOrThrow: vi.fn() },
   todo: { updateMany: vi.fn() },
+  workspace: { findMany: vi.fn(), deleteMany: vi.fn() },
+  user: { delete: vi.fn() },
 }
 
 export const prismaMock = {
   user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
   todo: { findMany: vi.fn(), findFirst: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
   group: { findFirst: vi.fn(), findMany: vi.fn(), upsert: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  workspace: { create: vi.fn(), update: vi.fn() },
+  workspaceMember: { findUnique: vi.fn(), findMany: vi.fn() },
   $transaction: vi.fn(),
 }
 
@@ -47,6 +51,10 @@ export function resetApiMocks() {
   prismaMock.group.findMany.mockResolvedValue([inboxGroup, workGroup])
   prismaMock.todo.findFirst.mockResolvedValue({ id: todoRecord.id })
   prismaMock.todo.findMany.mockResolvedValue([todoRecord])
+  transactionMock.workspace.findMany.mockResolvedValue([])
+  prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof transactionMock) => Promise<unknown>) =>
+    callback(transactionMock),
+  )
 }
 
 export function makeRequest(method: string, body?: unknown) {
@@ -85,6 +93,10 @@ export function expectNoDatabaseWrites() {
     transactionMock.group.create,
     transactionMock.group.delete,
     transactionMock.todo.updateMany,
+    prismaMock.workspace.create,
+    prismaMock.workspace.update,
+    transactionMock.workspace.deleteMany,
+    transactionMock.user.delete,
   ]) {
     expect(mock).not.toHaveBeenCalled()
   }
@@ -100,6 +112,9 @@ export function expectNoDatabaseCalls() {
     prismaMock.group.findMany,
     transactionMock.group.findFirst,
     transactionMock.group.findUniqueOrThrow,
+    prismaMock.workspaceMember.findUnique,
+    prismaMock.workspaceMember.findMany,
+    transactionMock.workspace.findMany,
   ]) {
     expect(mock).not.toHaveBeenCalled()
   }

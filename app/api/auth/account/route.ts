@@ -80,9 +80,34 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ message: 'Password is incorrect.' }, { status: 401 })
   }
 
-  await prisma.user.delete({
-    where: { id: user.id },
-  })
+  let deleted: boolean
+  try {
+    deleted = await prisma.$transaction(
+      async (tx) => {
+        const ownedWorkspaces = await tx.workspace.findMany({
+          where: { members: { some: { userId: user.id, role: 'OWNER' } } },
+          select: { id: true, _count: { select: { members: true } } },
+        })
+        if (ownedWorkspaces.some((workspace) => workspace._count.members > 1)) return false
+
+        await tx.workspace.deleteMany({ where: { id: { in: ownedWorkspaces.map((workspace) => workspace.id) } } })
+        await tx.user.delete({ where: { id: user.id } })
+        return true
+      },
+      { isolationLevel: 'Serializable' },
+    )
+  } catch (error) {
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2034') {
+      return NextResponse.json({ message: 'Workspace membership changed. Reload and try again.' }, { status: 409 })
+    }
+    throw error
+  }
+  if (!deleted) {
+    return NextResponse.json(
+      { message: 'Transfer ownership of shared workspaces before deleting your account.' },
+      { status: 409 },
+    )
+  }
   await deleteCurrentSession()
 
   return NextResponse.json({ ok: true })

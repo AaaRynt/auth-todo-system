@@ -1,6 +1,6 @@
 # Auth Todo System - Development Status
 
-最后更新：2026-10-07（已补充六批自动化测试及 TypeScript 7 工具链，此前验证记录保留历史上下文）
+最后更新：2026-10-07（已实现 Workspace/RBAC 第一阶段后端，历史验证记录保留上下文）
 
 ## 1. 当前结论
 
@@ -12,15 +12,16 @@
 - Group 的查询、新建、改名、删除，以及删除 group 时将 todo 移动到 `Inbox`。
 - Todo 与 Group 的后端查询、创建、更新和删除都绑定当前登录用户。
 - 全局 necessary cookie notice banner。
+- Workspace、成员角色和空间接口授权基础；注册创建默认空间，Owner 可改名，非成员无法读取空间。
 
 目前适合描述为：
 
 ```text
-业务代码已达到可演示的 database-backed MVP；
-本地 migration history 已对齐，下一阶段应集中在可靠性测试与部署准备。
+个人任务功能已达到可演示的 database-backed MVP，Workspace/RBAC 第一阶段后端已实现；
+下一阶段迁移 Todo/Group 的空间归属，再接入成员管理和空间界面。
 ```
 
-本文档已同步本轮可靠性修正；本轮没有执行 build。
+新 Workspace migration 只在临时数据库验证，开发数据库尚未应用。本轮没有执行 build。
 
 ## 2. 技术栈与结构
 
@@ -353,7 +354,7 @@ components/ui/avatar.tsx
 
 测试在 Node 环境中执行，Prisma 在纯函数测试中被隔离，不需要数据库配置，也不访问开发数据库。API ownership、session、数据库集成与前端交互测试仍待补充。
 
-运行方法和范围说明见 [testing.md](./testing.md)。此前各节的“本轮”记录保留原有历史上下文，本次没有运行 build，也没有新增依赖或修改已有依赖版本。
+运行方法和范围说明见 [testing.md](../testing.md)。此前各节的“本轮”记录保留原有历史上下文，本次没有运行 build，也没有新增依赖或修改已有依赖版本。
 
 本次验证通过：4 个测试文件、90 个用例；TypeScript 检查、ESLint、修改文件的 Prettier 检查与 Git diff 空白检查。
 
@@ -363,7 +364,7 @@ components/ui/avatar.tsx
 
 API 测试不访问数据库；事务测试验证 callback 内部的操作和执行顺序。真实 PostgreSQL 多用户隔离、事务回滚与账号删除级联清理仍需独立数据库集成测试；session 内部行为与前端交互测试也尚未补充。分组实际移动数量等既有待修正事项没有被固定为预期行为。
 
-运行方法与完整测试范围见 [testing.md](./testing.md)。本次不运行 build，不新增依赖或修改已有依赖版本，也不修改生产业务代码。
+运行方法与完整测试范围见 [testing.md](../testing.md)。本次不运行 build，不新增依赖或修改已有依赖版本，也不修改生产业务代码。
 
 本次验证通过：新增 135 个 API 用例，连同第一批共 14 个测试文件、225 个用例；移除 `DATABASE_URL` 后测试仍全部通过。TypeScript、ESLint、修改文件的 Prettier 检查与 Git diff 空白检查均通过。
 
@@ -373,7 +374,7 @@ API 测试不访问数据库；事务测试验证 callback 内部的操作和执
 
 测试使用真实 session 模块和 Node crypto，仅 mock Prisma 与 Next.js cookie store。时间与环境变量在测试后恢复，不访问数据库。真实浏览器 cookie、Next.js 请求上下文、数据库持久化与并发仍需后续集成或端到端测试。
 
-运行方法见 [testing.md](./testing.md)。本次不运行 build、不新增依赖或修改已有依赖版本，也不修改生产业务代码。
+运行方法见 [testing.md](../testing.md)。本次不运行 build、不新增依赖或修改已有依赖版本，也不修改生产业务代码。
 
 本次验证通过：新增 23 个 Session 用例，全部共 15 个测试文件、248 个用例；移除 `DATABASE_URL` 后仍全部通过。TypeScript、ESLint、修改文件的 Prettier 检查与 Git diff 空白检查均通过。
 
@@ -383,7 +384,7 @@ API 测试不访问数据库；事务测试验证 callback 内部的操作和执
 
 `pnpm test:integration` 自动创建独立临时 PostgreSQL 实例，应用既有 migration 并执行测试，结束后关闭实例与清理临时目录，不使用或修改开发数据库。普通测试单独增加 13 个连接串保护用例，并排除集成测试目录；不增加依赖或修改已有依赖版本，不运行 build。
 
-测试范围和 PostgreSQL 工具要求见 [testing.md](./testing.md)。前端交互、浏览器完整流程与并发边界仍待补充；分组实际移动数量、大小写不敏感数据库唯一约束及改密后 session 撤销策略仍是既有待修正事项。
+测试范围和 PostgreSQL 工具要求见 [testing.md](../testing.md)。前端交互、浏览器完整流程与并发边界仍待补充；分组实际移动数量、大小写不敏感数据库唯一约束及改密后 session 撤销策略仍是既有待修正事项。
 
 本次验证通过：普通测试 16 个文件、261 个用例，真实 PostgreSQL 集成测试 4 个文件、21 个用例，共 282 个用例。TypeScript、ESLint、修改文件的 Prettier 检查与 Git diff 空白检查通过；还通过无匹配测试文件的失败场景验证 runner 非零退出且清理临时实例，未遗留临时目录或 PostgreSQL 进程。
 
@@ -393,7 +394,7 @@ API 测试不访问数据库；事务测试验证 callback 内部的操作和执
 
 为渲染组件和模拟用户操作，新增固定版本开发依赖 `@testing-library/react`、`@testing-library/user-event`、`@testing-library/jest-dom` 和 `jsdom`。已有依赖版本未修改，生产业务代码未修改，不运行 build。`pnpm test:ui` 可单独运行前端测试，普通 `pnpm test` 也包含本批用例；各文件使用 jsdom 指令，原 Node 测试保持原环境。
 
-运行方法、依赖版本和 Node 要求见 [testing.md](./testing.md)。本批验证 DOM 行为与请求参数，浏览器真实 cookie、HTTP 完整流程、布局、任务编辑和分组弹窗仍需后续测试。
+运行方法、依赖版本和 Node 要求见 [testing.md](../testing.md)。本批验证 DOM 行为与请求参数，浏览器真实 cookie、HTTP 完整流程、布局、任务编辑和分组弹窗仍需后续测试。
 
 本次验证通过：移除 `DATABASE_URL` 后普通测试 23 个文件、338 个用例全部通过；真实 PostgreSQL 集成测试 4 个文件、21 个用例通过，临时实例已清理；合计 359 个用例。TypeScript、ESLint、修改文件的 Prettier 检查与 Git diff 空白检查通过。
 
@@ -405,7 +406,7 @@ API 测试不访问数据库；事务测试验证 callback 内部的操作和执
 
 测试复现并修正两处实际问题：`app/main/layout.tsx` 解析分组路径时保留开头 `/`，导致侧栏高亮和当前分组改名/删除跳转失效，现按完整 `/main/group/` 前缀截取并解码；`components/features/export.tsx` 在开始下载失败时漏掉 object URL 清理，现使用 `finally` 在成功或失败后释放。
 
-运行方法与范围见 [testing.md](./testing.md)。本次使用现有测试依赖，不新增依赖或修改依赖版本，不运行 build。React 组件检查未引入新的状态、Effect 或组件层级；侧栏高亮继续由当前路径派生。
+运行方法与范围见 [testing.md](../testing.md)。本次使用现有测试依赖，不新增依赖或修改依赖版本，不运行 build。React 组件检查未引入新的状态、Effect 或组件层级；侧栏高亮继续由当前路径派生。
 
 本次验证通过：普通测试 28 个文件、378 个用例，移除 `DATABASE_URL` 后仍全部通过；前端测试共 12 个文件、117 个用例；真实 PostgreSQL 集成测试 4 个文件、21 个用例通过，临时实例已清理。合计 399 个用例，TypeScript、ESLint、修改文件的 Prettier 检查与 Git diff 空白检查通过。
 
@@ -420,3 +421,15 @@ API 测试不访问数据库；事务测试验证 callback 内部的操作和执
 本次验证通过：7.0.2 原生类型检查、6.0.2 兼容类型检查、Next.js 配置解析、ESLint、普通测试 378 个用例与独立 PostgreSQL 集成测试 21 个用例，合计 399 个用例。临时数据库实例已清理，冻结 lockfile 安装、修改文件的 Prettier 检查与 Git diff 空白检查通过。安装仍报告既有 Vitest 5 对 `@types/node` 版本的 peer warning；本次保持原版本，没有扩大升级范围。
 
 Workspace 协作和 RBAC 仍处于产品讨论阶段，尚未实现。已确定的产品方向、角色权限、下一步待讨论边界和学习方式见 [workspace-design.md](./workspace-design.md)。后续按阶段讲解和独立提交，简历按实际完成情况更新。
+
+## 20. Workspace/RBAC 第一阶段后端（2026-10-07）
+
+新增 Workspace、WorkspaceMember 和 OWNER/EDITOR/VIEWER 枚举，角色位于成员关系上。新增 migration，为每个旧账号创建默认 Personal 空间与 Owner 关系，旧账号、Session、Group、Todo 数据保持原样。注册通过 Prisma 嵌套写入同时创建账号和默认空间，之后才创建 Session。
+
+新增空间列表、创建、读取和 Owner 改名接口。服务端从 Session 获取用户，按 workspaceId + userId 查询成员关系，通过统一权限策略判断是否允许访问；不读取客户端提交的角色作为授权依据。非成员和不存在空间统一返回 404，Editor/Viewer 直接改名返回 403。改名写入条件再次包含 Owner 身份，内部错误返回通用提示。
+
+数据库部分唯一索引防止重复 Owner、重复默认空间；延迟约束触发器保证事务提交后每个空间恰好一位 Owner，允许未来在一个事务内降级旧 Owner、提升新 Owner。账号注销使用 Serializable 事务，先检查共享空间 Owner，再删除独享空间和账号；共享 Owner 注销失败保留 Session 和数据。转让与成员管理接口尚未开放。
+
+本次新增或扩展角色策略、空间 API、注册/注销和真实数据库测试。验证通过：普通测试 32 个文件、439 个用例，独立 PostgreSQL 集成测试 6 个文件、38 个用例，合计 477 个用例；TypeScript 7、兼容 TypeScript 6 和 ESLint 通过。集成测试验证空数据库部署，也在独立 schema 中验证旧数据库有数据时的升级，临时实例已清理。没有运行 build，没有在开发数据库执行测试或 migration，没有新增依赖或修改现有依赖版本；执行 Prisma generate 更新已纳入版本管理的 Client。
+
+当前完整协作仍未实现：Todo/Group 继续按 userId 隔离，未新增 Workspace 界面、成员管理、任务共享或邀请链接。下一阶段将迁移资源归属并接入任务接口权限。学习说明、请求数据流、测试证据和面试练习见 [rbac-stage-one.md](./rbac-stage-one.md)，产品方向见 [workspace-design.md](./workspace-design.md)。

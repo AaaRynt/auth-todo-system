@@ -20,9 +20,40 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  sessions Session[]
-  groups   Group[]
-  todos    Todo[]
+  sessions         Session[]
+  groups           Group[]
+  todos            Todo[]
+  workspaceMembers WorkspaceMember[]
+}
+
+enum WorkspaceRole {
+  OWNER
+  EDITOR
+  VIEWER
+}
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members WorkspaceMember[]
+}
+
+model WorkspaceMember {
+  workspaceId String
+  userId      String
+  role        WorkspaceRole
+  isDefault   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Partial unique indexes and deferred owner checks are maintained in migration SQL.
+
+  @@id([workspaceId, userId])
+  @@index([userId])
 }
 
 model Session {

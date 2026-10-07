@@ -127,6 +127,6 @@ All todo and group endpoints require an active session and only operate on the c
 
 ## Current Status
 
-The project is a database-backed MVP suitable for local demonstration. Core authentication, account management, todo CRUD, group CRUD, and user data isolation are implemented. There are 399 automated test cases; see [testing.md](testing.md) for commands, compiler compatibility, and coverage boundaries.
+The project is a database-backed MVP suitable for local demonstration. Core authentication, account management, todo CRUD, group CRUD, and user data isolation are implemented. There are 477 automated test cases; see [testing.md](testing.md) for commands, compiler compatibility, and coverage boundaries.
 
-Workspace collaboration and RBAC are under product discussion and are not implemented yet. The agreed direction is recorded in [workspace-design.md](workspace-design.md).
+The first Workspace/RBAC backend stage is implemented: default workspaces, membership roles, space listing/creation/reading, and owner-only renaming. Shared tasks, member management, and workspace UI are pending. See [the product direction](docs/workspace-design.md) and [stage-one walkthrough](docs/rbac-stage-one.md). Apply the new migration before running this version against an existing database; automated tests use an isolated database.

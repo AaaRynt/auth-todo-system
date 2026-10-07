@@ -76,7 +76,12 @@ describe('POST /api/auth/register', () => {
       { user: { ...currentUser, nickname: 'ryan' } },
     )
     expect(prismaMock.user.create).toHaveBeenCalledWith({
-      data: { username: 'ryan', nickname: 'ryan', passwordHash: expect.any(String) },
+      data: {
+        username: 'ryan',
+        nickname: 'ryan',
+        passwordHash: expect.any(String),
+        workspaceMembers: { create: { role: 'OWNER', isDefault: true, workspace: { create: { name: 'Personal' } } } },
+      },
       select: { id: true, username: true, nickname: true, createdAt: true },
     })
     const passwordHash = prismaMock.user.create.mock.calls[0][0].data.passwordHash

@@ -174,7 +174,15 @@ pnpm test app/main/todo/todo-page.test.tsx
 
 本批测试复现并修正两处实际问题：侧栏解析 `/main/group/<name>` 时误保留开头 `/`，造成高亮及当前分组改名/删除跳转失效；导出开始下载失败时未释放已创建的 object URL，现通过 `finally` 清理。没有新增依赖或修改依赖版本。
 
-当前普通测试共 28 个文件、378 个用例，其中前端测试 12 个文件、117 个用例；独立 PostgreSQL 集成测试 4 个文件、21 个用例；合计 399 个用例。
+当前普通测试共 32 个文件、439 个用例，其中前端测试仍为 12 个文件、117 个用例；独立 PostgreSQL 集成测试 6 个文件、38 个用例；合计 477 个用例。
+
+## Workspace/RBAC 第一阶段
+
+新增角色策略和空间输入/序列化测试，新增空间列表、创建、读取与 Owner 改名的 Route Handler 测试；注册和注销测试也相应扩展。服务端授权使用真实 Session 身份，不相信客户端传入的角色或用户 ID。
+
+真实数据库测试新增两份：`tests/integration/workspaces.test.ts` 验证空间接口、Viewer/Editor 直接改名被拒绝、跨空间与非成员访问、成员移除后的即时拒绝、Owner/默认空间约束、原子写入回滚及注销保护；`tests/integration/workspace-migration.test.ts` 在临时数据库的独立 schema 中加载旧 migration 与旧数据，再应用新 migration，证明旧表内容不变并生成默认空间。
+
+完整数据库约束还包括 migration SQL 中的部分唯一索引和延迟 Owner 检查触发器；它们不能仅靠 mock 测试证明。此阶段没有开放成员管理 API，也没有接入 Todo/Group 的 Workspace 权限；任务共享和浏览器协作演示仍需后续实现。数据流与面试解释见 [rbac-stage-one.md](docs/rbac-stage-one.md)。
 
 这些测试验证 DOM 行为和发出的请求，不验证实际 HTTP 服务、浏览器 cookie、页面布局或音效播放。第五批搜索测试通过小型测试控件写入 TodoProvider，第六批另以真实 MainLayout 和 TodoPage 验证侧栏搜索连接；主布局测试仅替换无关的主题选择器，不模拟侧栏、任务列表或 TodoProvider。任务编辑的优先级下拉框使用真实 Radix Select，通过键盘选项操作；仅替换 jsdom 缺失的滚动方法并在测试后恢复。导出测试读取真实 Blob 的 JSON 内容，模拟下载入口与 object URL，不证明浏览器实际保存文件。数据库持久化由第四批集成测试负责。
 

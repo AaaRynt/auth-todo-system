@@ -12,6 +12,7 @@ import {
   prismaMock,
   resetApiMocks,
   sessionMock,
+  transactionMock,
 } from '@/tests/api-test-helpers'
 
 vi.mock('@/lib/prisma', async () => ({ prisma: (await import('@/tests/api-test-helpers')).prismaMock }))
@@ -101,7 +102,7 @@ describe('/api/auth/account', () => {
 
   it('deletes only the current user after password verification, then clears the session', async () => {
     prismaMock.user.findUnique.mockResolvedValue(user)
-    prismaMock.user.delete.mockResolvedValue(user)
+    transactionMock.user.delete.mockResolvedValue(user)
     await expectJson(await DELETE(makeRequest('DELETE', { password: 'CurrentPassword123', userId: 'user-b' })), 200, {
       ok: true,
     })
@@ -109,17 +110,55 @@ describe('/api/auth/account', () => {
       where: { id: currentUser.id },
       select: { id: true, passwordHash: true },
     })
-    expect(prismaMock.user.delete).toHaveBeenCalledExactlyOnceWith({ where: { id: currentUser.id } })
+    expect(transactionMock.user.delete).toHaveBeenCalledExactlyOnceWith({ where: { id: currentUser.id } })
+    expect(prismaMock.$transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: 'Serializable' })
     expect(sessionMock.deleteCurrentSession).toHaveBeenCalledOnce()
-    expect(prismaMock.user.delete.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(transactionMock.user.delete.mock.invocationCallOrder[0]).toBeLessThan(
       sessionMock.deleteCurrentSession.mock.invocationCallOrder[0],
     )
   })
 
   it('does not clear the session when deleting the account fails', async () => {
     prismaMock.user.findUnique.mockResolvedValue(user)
-    prismaMock.user.delete.mockRejectedValue(new Error('Delete failed'))
+    transactionMock.user.delete.mockRejectedValue(new Error('Delete failed'))
     await expect(DELETE(makeRequest('DELETE', { password: 'CurrentPassword123' }))).rejects.toThrow('Delete failed')
+    expect(sessionMock.deleteCurrentSession).not.toHaveBeenCalled()
+  })
+
+  it('deletes solo owned workspaces before deleting the account', async () => {
+    prismaMock.user.findUnique.mockResolvedValue(user)
+    transactionMock.workspace.findMany.mockResolvedValue([{ id: 'solo', _count: { members: 1 } }])
+    await expectJson(await DELETE(makeRequest('DELETE', { password: 'CurrentPassword123' })), 200, { ok: true })
+    expect(transactionMock.workspace.findMany).toHaveBeenCalledWith({
+      where: { members: { some: { userId: currentUser.id, role: 'OWNER' } } },
+      select: { id: true, _count: { select: { members: true } } },
+    })
+    expect(transactionMock.workspace.deleteMany).toHaveBeenCalledWith({ where: { id: { in: ['solo'] } } })
+    expect(transactionMock.workspace.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+      transactionMock.user.delete.mock.invocationCallOrder[0],
+    )
+  })
+
+  it('rejects deletion for a shared workspace owner without deleting any workspace or clearing the session', async () => {
+    prismaMock.user.findUnique.mockResolvedValue(user)
+    transactionMock.workspace.findMany.mockResolvedValue([
+      { id: 'solo', _count: { members: 1 } },
+      { id: 'shared', _count: { members: 2 } },
+    ])
+    await expectJson(await DELETE(makeRequest('DELETE', { password: 'CurrentPassword123' })), 409, {
+      message: 'Transfer ownership of shared workspaces before deleting your account.',
+    })
+    expect(transactionMock.workspace.deleteMany).not.toHaveBeenCalled()
+    expect(transactionMock.user.delete).not.toHaveBeenCalled()
+    expect(sessionMock.deleteCurrentSession).not.toHaveBeenCalled()
+  })
+
+  it('returns a retryable conflict when the serializable deletion transaction conflicts', async () => {
+    prismaMock.user.findUnique.mockResolvedValue(user)
+    prismaMock.$transaction.mockRejectedValue({ code: 'P2034' })
+    await expectJson(await DELETE(makeRequest('DELETE', { password: 'CurrentPassword123' })), 409, {
+      message: 'Workspace membership changed. Reload and try again.',
+    })
     expect(sessionMock.deleteCurrentSession).not.toHaveBeenCalled()
   })
 })

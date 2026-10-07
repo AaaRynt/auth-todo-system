@@ -19,6 +19,7 @@ export async function createFixture() {
       username: `integration-a-${randomUUID()}`,
       nickname: 'User A',
       passwordHash,
+      workspaceMembers: { create: { role: 'OWNER', isDefault: true, workspace: { create: { name: 'Personal' } } } },
     },
   })
   const userB = await prisma.user.create({
@@ -26,6 +27,7 @@ export async function createFixture() {
       username: `integration-b-${randomUUID()}`,
       nickname: 'User B',
       passwordHash,
+      workspaceMembers: { create: { role: 'OWNER', isDefault: true, workspace: { create: { name: 'Personal' } } } },
     },
   })
   const inboxA = await prisma.group.create({ data: { userId: userA.id, name: 'Inbox' } })
@@ -40,14 +42,25 @@ export async function createFixture() {
   })
   const todoB = await prisma.todo.create({ data: { userId: userB.id, groupId: groupB.id, title: 'B task' } })
   await loginAs(userA.id)
-  return { userA, userB, inboxA, groupA, inboxB, groupB, todoA, completedA, todoB }
+  const workspaceA = await prisma.workspace.findFirstOrThrow({
+    where: { members: { some: { userId: userA.id, isDefault: true } } },
+  })
+  const workspaceB = await prisma.workspace.findFirstOrThrow({
+    where: { members: { some: { userId: userB.id, isDefault: true } } },
+  })
+  return { userA, userB, workspaceA, workspaceB, inboxA, groupA, inboxB, groupB, todoA, completedA, todoB }
 }
 
 export type TIntegrationFixture = Awaited<ReturnType<typeof createFixture>>
 
 export async function deleteFixture(fixture: TIntegrationFixture | undefined) {
   clearCookies()
-  if (fixture) await prisma.user.deleteMany({ where: { id: { in: [fixture.userA.id, fixture.userB.id] } } })
+  if (fixture) {
+    await prisma.workspace.deleteMany({
+      where: { members: { some: { userId: { in: [fixture.userA.id, fixture.userB.id] } } } },
+    })
+    await prisma.user.deleteMany({ where: { id: { in: [fixture.userA.id, fixture.userB.id] } } })
+  }
 }
 
 export function makeRequest(method: string, body?: unknown) {

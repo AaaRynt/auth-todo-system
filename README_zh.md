@@ -127,6 +127,6 @@ Todo 和 Group：
 
 ## 当前状态
 
-项目目前是一个 database-backed MVP，适合本地演示。账号认证、账号管理、Todo CRUD、Group CRUD 和多用户数据隔离已经实现，已有 399 个自动化测试用例。运行命令、编译器兼容方案和覆盖边界见 [testing.md](testing.md)。
+项目目前是一个 database-backed MVP，适合本地演示。账号认证、账号管理、Todo CRUD、Group CRUD 和多用户数据隔离已经实现，已有 477 个自动化测试用例。运行命令、编译器兼容方案和覆盖边界见 [testing.md](testing.md)。
 
-Workspace 协作与 RBAC 目前处于产品讨论阶段，尚未实现。已确定的方向记录在 [workspace-design.md](workspace-design.md)。
+Workspace/RBAC 第一阶段后端已实现：默认空间、成员角色、空间列表/创建/读取、Owner 改名。共享任务、成员管理与空间界面仍待实现。产品方向见 [workspace-design.md](docs/workspace-design.md)，学习说明见 [rbac-stage-one.md](docs/rbac-stage-one.md)。现有数据库运行新版前需要应用新 migration；自动化测试使用独立数据库。

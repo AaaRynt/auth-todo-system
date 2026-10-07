@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { hashPassword, validatePasswordPolicy } from '@/lib/auth/password'
 import { createSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/prisma'
+import { defaultWorkspaceName } from '@/lib/workspace-data'
 
 export const runtime = 'nodejs'
 
@@ -40,6 +41,13 @@ export async function POST(request: Request) {
       username,
       nickname: username,
       passwordHash: await hashPassword(password),
+      workspaceMembers: {
+        create: {
+          role: 'OWNER',
+          isDefault: true,
+          workspace: { create: { name: defaultWorkspaceName } },
+        },
+      },
     },
     select: {
       id: true,
