@@ -49,8 +49,29 @@ pnpm test:watch
 pnpm test app/api
 ```
 
+## Session 测试
+
+第三批 `lib/auth/session.test.ts` 直接测试真实 session 模块，只 mock Prisma 和 `next/headers` 的 cookie store。SHA-256 和随机 token 使用真实 Node crypto；时间固定，每个用例后恢复时间与环境变量，不需要数据库或 Next.js 请求上下文。
+
+23 个用例覆盖：
+
+- 创建 session：32 字节随机 token、数据库仅保存 hash、30 天有效期、先持久化再设置 cookie、持久化失败不发 cookie。
+- Cookie 属性：`HttpOnly`、`SameSite=Lax`、根路径、生产环境 `Secure`；清除 cookie 时 `maxAge=0`。
+- 当前用户：没有或空 cookie、session 不存在、查询使用 token hash、仅返回公开字段。
+- 过期边界：到期前 1 毫秒仍有效，恰好到期及已过期均失效，删除过期 session 并清除 cookie。
+- 退出登录：仅删除当前 token 对应的 session，没有 token 或记录已被删除时仍能清 cookie，重复退出不报错。
+- 异常：session 查询失败不返回用户，cookie 写入失败向调用方抛错。
+
+可只运行第三批：
+
+```bash
+pnpm test lib/auth/session.test.ts
+```
+
+这些测试验证 session 模块使用的数据库参数与 cookie 属性，不验证浏览器实际接收 `Set-Cookie`、Next.js 请求上下文或真实数据库的持久化和并发行为。
+
 ## 后续测试范围
 
-后续仍需补充 session token/cookie/过期行为、真实数据库多用户隔离、约束与级联删除、分组删除事务回滚，以及前端交互。数据库行为需要独立 PostgreSQL 测试数据库的集成测试。
+后续仍需补充真实数据库多用户隔离、约束与级联删除、分组删除事务回滚，以及前端交互。数据库行为需要独立 PostgreSQL 测试数据库的集成测试。
 
 分组删除的实际移动数量、大小写不敏感的数据库唯一约束、改密后撤销其他 session 仍属于待修正的业务边界，本批测试没有将这些现有缺陷固定为预期行为。
